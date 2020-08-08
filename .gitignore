@@ -106,3 +106,4 @@ dist
 # Demo files
 main
 demo
+.jest-cache
