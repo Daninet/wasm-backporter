@@ -1,0 +1,16 @@
+{
+  "name": "wasm-transform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dani Biró <danibiro93@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@thi.ng/leb128": "^1.0.28",
+    "@types/node": "^14.0.27",
+    "lodash": "^4.17.19"
+  }
+}
