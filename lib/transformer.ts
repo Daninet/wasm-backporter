@@ -1,17 +1,30 @@
 import * as leb from '@thi.ng/leb128';
-import { getFunctions } from './functions';
+import { getFunctionBodies, getFunctionSignatures } from './functions';
 import { getInstructions } from './instructions';
+import { IPolyfill } from './polyfills';
 import { getSections } from './sections';
+import { getTypes, IType } from './types';
 
 export function disassemble(binary: Uint8Array) {
   const sections = getSections(binary);
+
+  const typeSection = sections.find((section) => section.type === 'type');
+  const types = getTypes(binary, typeSection.start);
+
+  const functionSection = sections.find((section) => section.type === 'function');
+  const functionSignatures = getFunctionSignatures(binary, functionSection.start);
+
   const codeSection = sections.find((section) => section.type === 'code');
-  const functions = getFunctions(binary, codeSection.start);
+  const functionBodies = getFunctionBodies(binary, codeSection.start);
 
   return {
     sections,
+    typeSection,
+    functionSection,
     codeSection,
-    functions,
+    functionBodies,
+    functionSignatures,
+    types,
   };
 }
 
@@ -20,9 +33,9 @@ export function getModifications(
 ) {
   const modifications = [];
 
-  const numberOfFunctions = disassembly.functions.length;
+  const numberOfFunctions = disassembly.functionBodies.length;
   for (let i = 0; i < numberOfFunctions; i++) {
-    const fn = disassembly.functions[i];
+    const fn = disassembly.functionBodies[i];
     const instructions = getInstructions(binary, fn.bodyStart, fn.bodyEnd);
 
     for (let j = 0; j < instructions.length; j++) {
@@ -74,19 +87,103 @@ function getFunctionChunks(binary: Uint8Array, modifications: ReturnType<typeof 
   return functionChunks;
 }
 
-export function reassemble(
-  binary: Uint8Array, disassembly: ReturnType<typeof disassemble>,
-  modifications: ReturnType<typeof getModifications>,
+function getValueTypeCode(x: string) {
+  switch (x) {
+    case 'i32':
+      return 0x7f;
+    case 'i64':
+      return 0x7e;
+    case 'f32':
+      return 0x7d;
+    case 'f64':
+      return 0x7c;
+  }
+
+  throw new Error(`Invalid value type ${x}`);
+}
+
+function encodeTypeString(str: string): Buffer {
+  const chunks = [];
+  const parts = str.split(' ');
+  const length = Buffer.from(leb.encodeULEB128(parts.length));
+  parts.forEach((part) => {
+    chunks.push(getValueTypeCode(part));
+  });
+  return Buffer.concat([length, Buffer.from(chunks)]);
+}
+
+function generateNewTypes(
+  disassembly: ReturnType<typeof disassemble>, newTypes: IType[],
 ) {
-  let newSectionLength = disassembly.codeSection.length;
-  const chunks = [
-    binary.slice(0, disassembly.codeSection.sectionLengthPos),
-    null, // code section length
-    binary.slice(disassembly.codeSection.start, disassembly.functions[0].functionLengthPos),
+  const types = [...disassembly.types];
+  const newTypeIndices: number[] = [];
+  newTypes.forEach((type) => {
+    const findResult = types.findIndex((t) => t.input === type.input && t.output === type.output);
+    if (findResult === -1) {
+      newTypeIndices.push(types.length);
+      types.push(type);
+    } else {
+      newTypeIndices.push(findResult);
+    }
+  });
+
+  const output = [
+    Buffer.from(leb.encodeULEB128(types.length)),
   ];
 
-  for (let i = 0; i < disassembly.functions.length; i++) {
-    const f = disassembly.functions[i];
+  types.forEach((type) => {
+    output.push(encodeTypeString(type.input), encodeTypeString(type.output));
+  });
+
+  return {
+    buffer: Buffer.concat(output),
+    newTypeIndices,
+  };
+}
+
+function generateNewFunctionSignatures(
+  disassembly: ReturnType<typeof disassemble>, newSignatures: number[],
+) {
+  const signatures = [...disassembly.functionSignatures];
+  const newSignatureIndices: number[] = [];
+
+  newSignatures.forEach((signature) => {
+    newSignatureIndices.push(signatures.length);
+    signatures.push(signature);
+  });
+
+  const output = [
+    Buffer.from(leb.encodeULEB128(signatures.length)),
+    ...signatures.map((signature) => Buffer.from(leb.encodeULEB128(signature))),
+  ];
+
+  return {
+    buffer: Buffer.concat(output),
+    newSignatureIndices,
+  };
+}
+
+export function reassemble(
+  binary: Uint8Array, disassembly: ReturnType<typeof disassemble>,
+  modifications: ReturnType<typeof getModifications>, newFunctions: IPolyfill[],
+) {
+  let newSectionLength = disassembly.codeSection.length;
+
+  const newTypes = generateNewTypes(disassembly, newFunctions.map((fn) => fn.type));
+  const newFnSignatures = generateNewFunctionSignatures(disassembly, newTypes.newTypeIndices);
+
+  const chunks = [
+    binary.slice(0, disassembly.typeSection.sectionLengthPos),
+    newTypes.buffer,
+    binary.slice(disassembly.typeSection.end + 1, disassembly.functionSection.sectionLengthPos),
+    newFnSignatures.buffer,
+    binary.slice(disassembly.functionSection.end + 1, disassembly.codeSection.sectionLengthPos),
+    null, // code section length
+    binary.slice(disassembly.codeSection.start, disassembly.functionBodies[0].functionLengthPos),
+  ];
+
+  for (let i = 0; i < disassembly.functionBodies.length; i++) {
+    const f = disassembly.functionBodies[i];
 
     const fm = modifications.filter((m) => m.functionLengthPos === f.functionLengthPos);
 
@@ -104,6 +201,9 @@ export function reassemble(
       chunks.push(...newFunctionChunks);
     }
   }
+
+  // add new functions
+  
 
   chunks.push(
     binary.slice(disassembly.codeSection.end + 1, binary.length),

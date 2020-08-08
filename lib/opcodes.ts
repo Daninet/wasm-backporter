@@ -1,12 +1,12 @@
 import * as leb from '@thi.ng/leb128';
 
-const noParameterHandler = (pos) => ({ params: [], pos });
-const uintParameter1Handler = (pos, data) => {
+const noParameterHandler = (pos: number) => ({ params: [], pos });
+const uintParameter1Handler = (pos: number, data) => {
   const [result, size] = leb.decodeULEB128(data, pos);
   return { params: [result], pos: pos + size };
 };
 
-const uintParameter2Handler = (pos, data) => {
+const uintParameter2Handler = (pos: number, data) => {
   const [result1, size1] = leb.decodeULEB128(data, pos);
   const [result2, size2] = leb.decodeULEB128(data, pos + size1);
   return { params: [result1, result2], pos: pos + size1 + size2 };
@@ -244,4 +244,31 @@ export const opcodes = {
   0xc2: getHandler('i64.extend8_s', noParameterHandler),
   0xc3: getHandler('i64.extend16_s', noParameterHandler),
   0xc4: getHandler('i64.extend32_s', noParameterHandler),
+};
+
+const reverseMap = {};
+Object.keys(opcodes).forEach((opcode) => {
+  const { name } = opcodes[opcode];
+  if (name.includes(' ')) return;
+  reverseMap[name] = parseInt(opcode, 10);
+});
+export const reverseOpCodes = reverseMap;
+
+export const longOpCodes = {
+  0xfc00: getHandler('i32.trunc_sat_f32_s - TODO', illegalOpHandler),
+  0xfc01: getHandler('i32.trunc_sat_f32_u - TODO', illegalOpHandler),
+  0xfc02: getHandler('i32.trunc_sat_f64_s - TODO', illegalOpHandler),
+  0xfc03: getHandler('i32.trunc_sat_f64_u - TODO', illegalOpHandler),
+  0xfc04: getHandler('i64.trunc_sat_f32_s - TODO', illegalOpHandler),
+  0xfc05: getHandler('i64.trunc_sat_f32_u - TODO', illegalOpHandler),
+  0xfc06: getHandler('i64.trunc_sat_f64_s - TODO', illegalOpHandler),
+  0xfc07: getHandler('i64.trunc_sat_f64_u - TODO', illegalOpHandler),
+
+  0xfc08: getHandler('memory.init - TODO', illegalOpHandler),
+  0xfc09: getHandler('data.drop - TODO', illegalOpHandler),
+  0xfc0a: getHandler('memory.copy - TODO', illegalOpHandler),
+  0xfc0b: getHandler('memory.fill', uintParameter1Handler),
+  0xfc0c: getHandler('table.init - TODO', illegalOpHandler),
+  0xfc0d: getHandler('elem.drop - TODO', illegalOpHandler),
+  0xfc0e: getHandler('table.copy - TODO', illegalOpHandler),
 };

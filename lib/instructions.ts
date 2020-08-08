@@ -1,4 +1,4 @@
-import { opcodes } from './opcodes';
+import { opcodes, longOpCodes } from './opcodes';
 
 export function getInstructions(data, start, end) {
   const instructions = [];
@@ -7,9 +7,16 @@ export function getInstructions(data, start, end) {
   while (pos < end) {
     const instructionPosition = pos;
     const opcode = data[pos++];
-    const opcodeData = opcodes[opcode];
+    let opcodeData = opcodes[opcode];
     if (!opcodeData) {
-      throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`);
+      // read extra byte
+      const opcode2 = data[pos++];
+      opcodeData = longOpCodes[opcode * 256 + opcode2];
+      if (!opcodeData) {
+        // rewind
+        pos--;
+        throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`);
+      }
     }
 
     const action = opcodeData.getParamsAndPosition(pos, data);

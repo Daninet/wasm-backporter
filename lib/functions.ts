@@ -15,7 +15,30 @@ function getLocalType(x) {
   throw new Error(`Invalid local type ${x}`);
 }
 
-export function getFunctions(data, pos) {
+export function getFunctionSignatures(data, pos: number): number[] {
+  const signatures = [];
+
+  const [numberOfFunctions, lengthBytes] = leb.decodeULEB128(data, pos);
+  pos += lengthBytes;
+
+  for (let i = 0; i < numberOfFunctions; i++) {
+    const [typeIndex, typeIndexLength] = leb.decodeULEB128(data, pos);
+    pos += typeIndexLength;
+
+    signatures.push(typeIndex);
+  }
+
+  return signatures;
+}
+
+export interface IFunctionBody {
+  functionLengthPos: number;
+  bodyStart: number;
+  bodyEnd: number;
+  locals: string[];
+}
+
+export function getFunctionBodies(data, pos: number): IFunctionBody[] {
   const functions = [];
 
   let [numberOfFunctions, lengthBytes] = leb.decodeULEB128(data, pos);
