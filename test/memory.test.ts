@@ -1,3 +1,4 @@
+import { transform } from '../lib/index';
 const wabtFactory = require('wabt');
 /* global test, expect */
 let wabt = null;
@@ -10,6 +11,9 @@ async function compileTest(wat, callback): Promise<any> {
   const { buffer } = wabt.parseWat('file', wat).toBinary({});
   const instance = await WebAssembly.instantiate(buffer, {});
   await callback(instance.instance);
+  const newBinary = transform(buffer, {});
+  const newInstance = await WebAssembly.instantiate(newBinary, {});
+  await callback(newInstance.instance);
 }
 
 test('simple strings', async () => {

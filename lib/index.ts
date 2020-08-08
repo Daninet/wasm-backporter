@@ -16,7 +16,7 @@ const getReplacement = (func, instruction) => {
   return null;
 };
 
-export function transform(wasm: Uint8Array, options?: ITransformOptions = {}): Uint8Array {
+export function transform(wasm: Uint8Array, options: ITransformOptions = {}): Uint8Array {
   const disassembly = disassemble(wasm);
   const modifications = getModifications(wasm, disassembly, getReplacement);
   const newWasm = reassemble(wasm, disassembly, modifications);
