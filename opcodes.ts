@@ -1,28 +1,26 @@
-import * as leb from "@thi.ng/leb128";
+import * as leb from '@thi.ng/leb128';
 
 const noParameterHandler = (pos) => ({ params: [], pos });
 const uintParameter1Handler = (pos, data) => {
   const [result, size] = leb.decodeULEB128(data, pos);
   return { params: [result], pos: pos + size };
-}
+};
 
 const uintParameter2Handler = (pos, data) => {
   const [result1, size1] = leb.decodeULEB128(data, pos);
   const [result2, size2] = leb.decodeULEB128(data, pos + size1);
   return { params: [result1, result2], pos: pos + size1 + size2 };
-}
+};
 
 const illegalOpHandler = (pos) => {
   throw new Error(`Illegal instruction at pos ${pos}`);
-}
-
-const getHandler = (name: string, handler: Function) => {
-  return {
-    name,
-    getPosition: (pos: number, data) => handler(pos, data).pos,
-    getParamsAndPosition: handler, // used for debugging
-  };
 };
+
+const getHandler = (name: string, handler: Function) => ({
+  name,
+  getPosition: (pos: number, data) => handler(pos, data).pos,
+  getParamsAndPosition: handler, // used for debugging
+});
 
 export const opcodes = {
   0x00: getHandler('unreachable', noParameterHandler),

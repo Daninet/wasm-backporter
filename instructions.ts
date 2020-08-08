@@ -9,7 +9,7 @@ export function getInstructions(data, start, end) {
     const opcode = data[pos++];
     const opcodeData = opcodes[opcode];
     if (!opcodeData) {
-      throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`)
+      throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`);
     }
 
     const action = opcodeData.getParamsAndPosition(pos, data);

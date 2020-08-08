@@ -1,4 +1,4 @@
-import * as leb from "@thi.ng/leb128";
+import * as leb from '@thi.ng/leb128';
 
 const sectionTypes = [
   'custom',
@@ -15,7 +15,6 @@ const sectionTypes = [
   'data',
 ];
 
-
 function readSection(data, pos) {
   const sectionType = data[pos++];
   const sectionLengthPos = pos;
@@ -25,7 +24,7 @@ function readSection(data, pos) {
     type: sectionTypes[sectionType],
     sectionLengthPos,
     start, // inclusive
-    end: start + sectionLength - 1,  // inclusive
+    end: start + sectionLength - 1, // inclusive
     length: sectionLength,
   };
 }
@@ -33,7 +32,9 @@ function readSection(data, pos) {
 export function getSections(data) {
   let pos = 8; // start after file signature
   const sections = [
-    { type: 'header', sectionLengthPos: 0, start: 0, end: 7, length: 8 },
+    {
+      type: 'header', sectionLengthPos: 0, start: 0, end: 7, length: 8,
+    },
   ];
 
   while (pos < data.length) {

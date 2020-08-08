@@ -26,7 +26,7 @@ export function getFunctions(data, pos) {
     let functionLength;
     [functionLength, lengthBytes] = leb.decodeULEB128(data, pos);
     pos += lengthBytes;
-    
+
     const localsStart = pos;
     const locals = [];
     let localGroupsNumber;
@@ -45,14 +45,14 @@ export function getFunctions(data, pos) {
         }
       }
     }
-    
+
     const localsLength = pos - localsStart;
     const bodyEnd = pos + functionLength - localsLength - 1;
 
     functions.push({
       functionLengthPos,
       bodyStart: pos, // body - inclusive
-      bodyEnd: bodyEnd, // body - inclusive
+      bodyEnd, // body - inclusive
       locals,
     });
 

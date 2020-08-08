@@ -1,8 +1,8 @@
-const fs = require('fs');
-import * as leb from "@thi.ng/leb128";
-import { getFunctions } from "./functions";
-import { getInstructions } from "./instructions";
-import { getSections } from "./sections";
+import fs from 'fs';
+import * as leb from '@thi.ng/leb128';
+import { getFunctions } from './functions';
+import { getInstructions } from './instructions';
+import { getSections } from './sections';
 const data = fs.readFileSync('./demo/argon2.wasm');
 // const data = fs.readFileSync('./main/main.wasm');
 
@@ -49,12 +49,15 @@ for (const func of functions) {
 
 function getFunctionChunks(modifications) {
   const { functionLengthPos } = modifications[0];
-  const [ prevFunctionLength, prevFunctionLengthSize ] = leb.decodeULEB128(data, functionLengthPos);
+  const [prevFunctionLength, prevFunctionLengthSize] = leb.decodeULEB128(data, functionLengthPos);
 
   let functionLength = prevFunctionLength;
   const functionChunks = [
     null, // functionLength
-    data.slice(functionLengthPos + prevFunctionLengthSize, modifications[0].functionBodyStart) // between function length and body (locals)
+    data.slice( // between function length and body (locals)
+      functionLengthPos + prevFunctionLengthSize,
+      modifications[0].functionBodyStart,
+    ),
   ];
 
   let lastWrittenPos = modifications[0].functionBodyStart - 1;
@@ -84,7 +87,7 @@ const chunks = [
 for (let i = 0; i < functions.length; i++) {
   const f = functions[i];
 
-  const fm = modifications.filter(m => m.functionLengthPos === f.functionLengthPos)
+  const fm = modifications.filter(m => m.functionLengthPos === f.functionLengthPos);
 
   if (fm.length === 0) {
     // can copy the whole function
@@ -101,7 +104,7 @@ for (let i = 0; i < functions.length; i++) {
 }
 
 chunks.push(
-  data.slice(codeSection.end + 1, data.length)
+  data.slice(codeSection.end + 1, data.length),
 );
 
 chunks[1] = Buffer.from(leb.encodeULEB128(newSectionLength));
