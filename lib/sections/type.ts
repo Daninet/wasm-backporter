@@ -35,8 +35,11 @@ function getValueCode(x: string): number {
 }
 
 function encodeTypeString(str: string): Buffer {
+  if (str === '') {
+    return Buffer.from([0x00]);
+  }
   const chunks = [];
-  const parts = str.split(' ');
+  const parts = str.trim().split(' ');
   const length = Buffer.from(leb.encodeULEB128(parts.length));
   parts.forEach((part) => {
     chunks.push(getValueCode(part));

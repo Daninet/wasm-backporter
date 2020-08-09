@@ -1,6 +1,6 @@
 import * as leb from '@thi.ng/leb128';
 import { BaseSection } from './base';
-import { CodeFunction } from './codeFunction';
+import { CodeFunction, IInstructionReplacer } from './codeFunction';
 
 export class CodeSection extends BaseSection {
   private functions: CodeFunction[] = [];
@@ -15,21 +15,26 @@ export class CodeSection extends BaseSection {
 
     const [numberOfFunctions, lengthBytes] = leb.decodeULEB128(buf, pos);
     pos += lengthBytes;
+    console.log('numberOfFunctions', numberOfFunctions);
 
     for (let i = 0; i < numberOfFunctions; i++) {
       const [functionLength, functionLengthBytes] = leb.decodeULEB128(buf, pos);
+      console.log('functionLength', functionLength);
       pos += functionLengthBytes;
 
       this.functions.push(new CodeFunction(buf.slice(pos, pos + functionLength)));
+      pos += functionLength;
     }
   }
 
-  // add(typeIndex: number): number {
-  //   this.signatures.push(typeIndex);
-  //   this.newChunks.push(Buffer.from(leb.encodeULEB128(typeIndex)));
+  // body includes local vector + opcodes
+  add(fnBody: Uint8Array): void {
+    this.functions.push(new CodeFunction(Buffer.from(fnBody)));
+  }
 
-  //   return this.signatures.length - 1;
-  // }
+  setInstructionReplacer(replacer: IInstructionReplacer): void {
+    this.functions.forEach((fn) => fn.setInstructionReplacer(replacer));
+  }
 
   export(): Buffer[] {
     const output = [

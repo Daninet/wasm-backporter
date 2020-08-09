@@ -4,6 +4,8 @@ import { FunctionSection } from './function';
 import { CopySection } from './copy';
 import { TypeSection } from './type';
 import { BaseSection } from './base';
+import { IFunctionBody } from '../polyfills';
+import { IInstruction, IInstructionReplacer, IInstructionReplacerWithFunction } from './codeFunction';
 
 interface ISection {
   category: string;
@@ -101,6 +103,9 @@ export function createSections(wasm: Buffer) {
   console.log('mergedSections', mergedSections);
 
   const sectionHandlers: BaseSection[] = [];
+  let typeSection: TypeSection = null;
+  let functionSection: FunctionSection = null;
+  let codeSection: CodeSection = null;
   mergedSections.forEach((section) => {
     if (section.category === 'copy') {
       sectionHandlers.push(new CopySection(wasm.slice(section.absStart, section.end + 1)));
@@ -108,17 +113,20 @@ export function createSections(wasm: Buffer) {
     }
 
     if (section.category === 'type') {
-      sectionHandlers.push(new TypeSection(wasm.slice(section.start, section.end + 1)));
+      typeSection = new TypeSection(wasm.slice(section.start, section.end + 1));
+      sectionHandlers.push(typeSection);
       return;
     }
 
     if (section.category === 'function') {
-      sectionHandlers.push(new FunctionSection(wasm.slice(section.start, section.end + 1)));
+      functionSection = new FunctionSection(wasm.slice(section.start, section.end + 1));
+      sectionHandlers.push(functionSection);
       return;
     }
 
     if (section.category === 'code') {
-      sectionHandlers.push(new CodeSection(wasm.slice(section.start, section.end + 1)));
+      codeSection = new CodeSection(wasm.slice(section.start, section.end + 1));
+      sectionHandlers.push(codeSection);
     }
   });
 
@@ -133,8 +141,24 @@ export function createSections(wasm: Buffer) {
     return Buffer.concat(output);
   };
 
+  const addFunction = (fn: IFunctionBody): Uint8Array => {
+    const typeIndex = typeSection.add(fn.type);
+    const funcIndex = functionSection.add(typeIndex);
+    codeSection.add(fn.body);
+    return leb.encodeULEB128(funcIndex);
+  };
+
+  const setInstructionReplacer =
+    (replacer: IInstructionReplacerWithFunction, fnIndex: Uint8Array) => {
+      codeSection.setInstructionReplacer(
+        (instruction: IInstruction) => replacer(instruction, fnIndex),
+      );
+    };
+
   return {
     export: exportHandler,
+    addFunction,
+    setInstructionReplacer,
     handlers: sectionHandlers,
   };
 }

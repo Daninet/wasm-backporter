@@ -12,6 +12,18 @@ const uintParameter2Handler = (pos: number, data) => {
   return { params: [result1, result2], pos: pos + size1 + size2 };
 };
 
+const uintVectorHandler = (pos: number, data) => {
+  const [vectorSize, vectorSizeBytes] = leb.decodeULEB128(data, pos);
+  pos += vectorSizeBytes;
+  const params = [];
+  for (let i = 0; i < vectorSize; i++) {
+    const [item, itemBytes] = leb.decodeULEB128(data, pos);
+    pos += itemBytes;
+    params.push(item);
+  }
+  return { params, pos };
+};
+
 const illegalOpHandler = (pos) => {
   throw new Error(`Illegal instruction at pos ${pos}`);
 };
@@ -26,9 +38,9 @@ export const opcodes = {
   0x00: getHandler('unreachable', noParameterHandler),
   0x01: getHandler('nop', noParameterHandler),
 
-  0x02: getHandler('block', noParameterHandler),
-  0x03: getHandler('loop', noParameterHandler),
-  0x04: getHandler('if', noParameterHandler),
+  0x02: getHandler('block', uintParameter1Handler),
+  0x03: getHandler('loop', uintParameter1Handler),
+  0x04: getHandler('if', uintParameter1Handler),
 
   0x05: getHandler('else', noParameterHandler),
   0x06: getHandler('illegal 0x06', illegalOpHandler),
@@ -40,7 +52,7 @@ export const opcodes = {
 
   0x0c: getHandler('br', uintParameter1Handler),
   0x0d: getHandler('br_if', uintParameter1Handler),
-  0x0e: getHandler('br_table', uintParameter1Handler),
+  0x0e: getHandler('br_table', uintVectorHandler),
   0x0f: getHandler('return', noParameterHandler),
 
   0x10: getHandler('call', uintParameter1Handler),
