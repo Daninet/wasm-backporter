@@ -1,7 +1,7 @@
 {
   "name": "wasm-backporter",
-  "version": "0.1.0",
-  "description": "Backport newer WASM instructions into older ones",
+  "version": "0.0.1",
+  "description": "Backport post-MVP WASM features to older instructions on client-side",
   "main": "dist/index.umd.js",
   "module": "dist/index.esm.js",
   "types": "dist/lib/index.d.ts",
@@ -12,7 +12,36 @@
     "prepublishOnly": "sh -c ./scripts/build.sh",
     "test": "node --expose-gc ./node_modules/.bin/jest --coverage --logHeapUsage"
   },
-  "author": "Dani Biró <danibiro93@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Daninet/wasm-backporter.git"
+  },
+  "keywords": [
+    "wasm",
+    "webassembly",
+    "backport",
+    "babel",
+    "post-mvp",
+    "simd",
+    "bulk",
+    "memory",
+    "transform",
+    "compatibility",
+    "compat",
+    "replace",
+    "transpile",
+    "recompile",
+    "fast",
+    "instructions",
+    "instruction",
+    "backward",
+    "compatible"
+  ],
+  "bugs": {
+    "url": "https://github.com/Daninet/wasm-backporter/issues"
+  },
+  "homepage": "https://github.com/Daninet/wasm-backporter#readme",
+  "author": "Dani Biró <danibiro93@gmail.com> (https://danibiro.com)",
   "license": "MIT",
   "dependencies": {
     "@thi.ng/leb128": "^1.0.28"
