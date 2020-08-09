@@ -6,12 +6,12 @@ test('memory.fill', async () => {
     'fc0b',
     `(module
       (memory 1)
-      (func $fill (param $p1 i32) (param $p2 i32) (param $p3 i32) (result i32)
-        get_local $p1 ;; target offset
-        get_local $p2 ;; byte value to set
-        get_local $p3 ;; length
+      (func $fill (param $dst i32) (param $value i32) (param $size i32) (result i32)
+        get_local $dst
+        get_local $value
+        get_local $size
         memory.fill
-        get_local $p1
+        get_local $dst
         i32.load8_u)
       (export "fill" (func $fill))
       (export "memory" (memory 0)))`,

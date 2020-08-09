@@ -1,5 +1,6 @@
 import { transform } from '../lib/index';
 // const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const wabtFactory = require('wabt');
 
 let wabt = null;
