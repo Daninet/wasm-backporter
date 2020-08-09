@@ -1,4 +1,5 @@
 import { memoryFill } from './polyfills';
+import { createSections } from './sections/index';
 import { disassemble, getModifications, reassemble } from "./transformer";
 
 type IAvailableTransforms = 'auto' | 'memory';
@@ -18,14 +19,21 @@ const getReplacement = (func, instruction) => {
 };
 
 export function transform(wasm: Uint8Array, options: ITransformOptions = {}): Uint8Array {
-  const newFunctions = [memoryFill];
+  const sections = createSections(Buffer.from(wasm));
+  const exported = sections.export();
+  console.log(Buffer.from(wasm));
+  console.log(exported);
+  console.log(WebAssembly.validate(exported));
+
+  return new Uint8Array();
+  // const newFunctions = [memoryFill];
   // console.log(wasm);
-  const disassembly = disassemble(wasm);
-  console.log('disassembly', disassembly);
-  const modifications = getModifications(wasm, disassembly, getReplacement);
-  const newWasm = reassemble(wasm, disassembly, modifications, newFunctions);
+  // const disassembly = disassemble(wasm);
+  // console.log('disassembly', disassembly);
+  // const modifications = getModifications(wasm, disassembly, getReplacement);
+  // const newWasm = reassemble(wasm, disassembly, modifications, newFunctions);
   // console.log(newWasm);
-  return newWasm;
+  // return newWasm;
 }
 
 export default transform;
