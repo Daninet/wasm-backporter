@@ -27,6 +27,8 @@ const memoryFillPolyfill: IFunctionBody = {
         op['i32.const'], 0x7f,
         op['i32.add'],
         op['local.tee'], 0x02,
+        op['local.get'], 0x00,
+        op['i32.add'],
         op['local.get'], 0x01,
         op['i32.store8'], 0x00, 0x00,
         op['local.get'], 0x02,
