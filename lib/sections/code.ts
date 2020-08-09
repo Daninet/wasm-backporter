@@ -15,11 +15,11 @@ export class CodeSection extends BaseSection {
 
     const [numberOfFunctions, lengthBytes] = leb.decodeULEB128(buf, pos);
     pos += lengthBytes;
-    console.log('numberOfFunctions', numberOfFunctions);
+    // console.log('numberOfFunctions', numberOfFunctions);
 
     for (let i = 0; i < numberOfFunctions; i++) {
       const [functionLength, functionLengthBytes] = leb.decodeULEB128(buf, pos);
-      console.log('functionLength', functionLength);
+      // console.log('functionLength', functionLength);
       pos += functionLengthBytes;
 
       this.functions.push(new CodeFunction(buf.slice(pos, pos + functionLength)));

@@ -54,7 +54,7 @@ export class CodeFunction extends BaseSection {
   constructor(dataWithoutSegmentSize: Buffer) {
     super();
     this.buf = dataWithoutSegmentSize;
-    console.log('buf', this.buf);
+    // console.log('buf', this.buf);
 
     this.readFunction();
     this.readInstructions();
@@ -65,12 +65,12 @@ export class CodeFunction extends BaseSection {
 
     const [localsGroupNumber, localsGroupNumberBytes] = leb.decodeULEB128(this.buf, pos);
     pos += localsGroupNumberBytes;
-    console.log('localsGroupNumber', localsGroupNumber);
+    // console.log('localsGroupNumber', localsGroupNumber);
     for (let i = 0; i < localsGroupNumber; i++) {
       const [localsCount, localsCountBytes] = leb.decodeULEB128(this.buf, pos);
       pos += localsCountBytes;
       const localType = this.buf[pos++];
-      console.log('localsCount', localsCount, localType);
+      // console.log('localsCount', localsCount, localType);
 
       for (let k = 0; k < localsCount; k++) {
         this.locals.push(getLocalType(localType));

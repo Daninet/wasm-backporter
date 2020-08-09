@@ -97,7 +97,7 @@ export class TypeSection extends BaseSection {
       });
     }
 
-    console.log('types', this.types);
+    // console.log('types', this.types);
     // trim numberOfTypes
     this.buf = this.buf.slice(lengthBytes);
   }

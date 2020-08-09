@@ -277,10 +277,10 @@ export const longOpCodes = {
   0xfc07: getHandler('i64.trunc_sat_f64_u - TODO', illegalOpHandler),
 
   0xfc08: getHandler('memory.init - TODO', illegalOpHandler),
-  0xfc09: getHandler('data.drop - TODO', illegalOpHandler),
-  0xfc0a: getHandler('memory.copy - TODO', illegalOpHandler),
+  0xfc09: getHandler('data.drop', uintParameter1Handler),
+  0xfc0a: getHandler('memory.copy', uintParameter2Handler),
   0xfc0b: getHandler('memory.fill', uintParameter1Handler),
   0xfc0c: getHandler('table.init - TODO', illegalOpHandler),
-  0xfc0d: getHandler('elem.drop - TODO', illegalOpHandler),
+  0xfc0d: getHandler('elem.drop', uintParameter1Handler),
   0xfc0e: getHandler('table.copy - TODO', illegalOpHandler),
 };

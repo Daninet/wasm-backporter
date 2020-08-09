@@ -4,8 +4,8 @@ import { FunctionSection } from './function';
 import { CopySection } from './copy';
 import { TypeSection } from './type';
 import { BaseSection } from './base';
-import { IFunctionBody } from '../polyfills';
-import { IInstruction, IInstructionReplacer, IInstructionReplacerWithFunction } from './codeFunction';
+import { IInstructionReplacer } from './codeFunction';
+import { IFunctionBody } from '../polyfills/type';
 
 interface ISection {
   category: string;
@@ -100,7 +100,7 @@ export function createSections(wasm: Buffer) {
     lastItem.end = section.end;
   });
 
-  console.log('mergedSections', mergedSections);
+  // console.log('mergedSections', mergedSections);
 
   const sectionHandlers: BaseSection[] = [];
   let typeSection: TypeSection = null;
@@ -130,14 +130,14 @@ export function createSections(wasm: Buffer) {
     }
   });
 
-  console.log('mergedSections', sectionHandlers);
+  // console.log('mergedSections', sectionHandlers);
 
   const exportHandler = () => {
     const output: Buffer[] = [];
     sectionHandlers.forEach((s) => {
       output.push(...s.export());
     });
-    console.log('exports', output);
+    // console.log('exports', output);
     return Buffer.concat(output);
   };
 
@@ -149,10 +149,8 @@ export function createSections(wasm: Buffer) {
   };
 
   const setInstructionReplacer =
-    (replacer: IInstructionReplacerWithFunction, fnIndex: Uint8Array) => {
-      codeSection.setInstructionReplacer(
-        (instruction: IInstruction) => replacer(instruction, fnIndex),
-      );
+    (replacer: IInstructionReplacer) => {
+      codeSection.setInstructionReplacer(replacer);
     };
 
   return {
