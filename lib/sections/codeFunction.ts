@@ -132,7 +132,7 @@ export class CodeFunction extends BaseSection {
 
     const chunks: Buffer[] = [];
 
-    let lastWrittenPos = 0;
+    let lastWrittenPos = -1;
 
     this.modifications.forEach((modification) => {
       chunks.push(
@@ -158,7 +158,7 @@ export class CodeFunction extends BaseSection {
 
     const output = [
       Buffer.from([]),
-      this.buf.slice(0, this.bodyStart),
+      this.buf.slice(0, this.bodyStart), // locals
       ...this.getModifiedInstructions(),
     ];
 
