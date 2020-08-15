@@ -2,6 +2,7 @@ import {
   dataDrop, elemDrop, memoryCopy, memoryFill,
 } from './polyfills/index';
 import {
+  i16x8Shl, i16x8ShrS, i16x8ShrU,
   i32x4Shl, i32x4ShrS, i32x4ShrU,
   i64x2Shl, i64x2ShrS, i64x2ShrU,
   v128And, v128AndNot, v128Not, v128Or, v128Xor,
@@ -17,8 +18,15 @@ import {
   i8x16LtS, i8x16LtU, i8x16LeS, i8x16LeU,
   i8x16GtU, i8x16GtS, i8x16GeU, i8x16GeS,
 } from './polyfills/simdCompare';
-import { i16x8ExtractLaneU, i32x4ExtractLane, i64x2ExtractLane } from './polyfills/simdExtract';
-import { v128Load, v16x8LoadSplat, v32x4LoadSplat, v64x2LoadSplat, v8x16LoadSplat } from './polyfills/simdLoad';
+import {
+  i8x16ExtractLaneS, i8x16ExtractLaneU,
+  i16x8ExtractLaneS, i16x8ExtractLaneU,
+  i32x4ExtractLane,
+  i64x2ExtractLane,
+} from './polyfills/simdExtract';
+import {
+  v128Load, v16x8LoadSplat, v32x4LoadSplat, v64x2LoadSplat, v8x16LoadSplat,
+} from './polyfills/simdLoad';
 import {
   i16x8Splat, i32x4Splat, i64x2Splat, i8x16Splat,
 } from './polyfills/simdSplat';
@@ -35,10 +43,14 @@ interface ITransformOptions {
 
 const polyfills = [
   memoryFill, dataDrop, elemDrop, memoryCopy,
-  i64x2ExtractLane, i32x4ExtractLane, i16x8ExtractLaneU,
+  i64x2ExtractLane, i32x4ExtractLane,
+  i16x8ExtractLaneU, i16x8ExtractLaneS,
+  i8x16ExtractLaneU, i8x16ExtractLaneS,
   v128Load, v128Store,
   v128Not, v128And, v128AndNot, v128Or, v128Xor,
-  i64x2Shl, i64x2ShrU, i64x2ShrS, i32x4Shl, i32x4ShrU, i32x4ShrS,
+  i64x2Shl, i64x2ShrU, i64x2ShrS,
+  i32x4Shl, i32x4ShrU, i32x4ShrS,
+  i16x8Shl, i16x8ShrU, i16x8ShrS,
   i64x2Splat, i32x4Splat, i16x8Splat, i8x16Splat,
   i32x4Eq, i32x4Ne,
   i32x4LtS, i32x4LtU, i32x4LeS, i32x4LeU,
