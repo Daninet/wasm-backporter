@@ -9,7 +9,7 @@
     "start": "ts-node lib/index.ts",
     "build": "sh -c ./scripts/build.sh",
     "eslint": "eslint lib/**/*.ts test/**/*.ts",
-    "prepublishOnly": "sh -c ./scripts/build.sh",
+    "prepublishOnly": "",
     "test": "node --expose-gc ./node_modules/.bin/jest --coverage --logHeapUsage"
   },
   "repository": {

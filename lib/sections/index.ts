@@ -1,4 +1,3 @@
-import * as leb from '@thi.ng/leb128';
 import { CodeSection } from './code';
 import { FunctionSection } from './function';
 import { CopySection } from './copy';
@@ -6,6 +5,7 @@ import { TypeSection } from './type';
 import { BaseSection } from './base';
 import { IInstructionReplacer } from './codeFunction';
 import { IFunctionBody } from '../polyfills/type';
+import { decodeULEB128, encodeULEB128 } from '../leb128';
 
 interface ISection {
   category: string;
@@ -53,7 +53,7 @@ const sectionCategory = [
 function readSection(data, pos): ISection {
   const absStart = pos;
   const sectionType = data[pos++];
-  const [sectionLength, lengthBytes] = leb.decodeULEB128(data, pos);
+  const [sectionLength, lengthBytes] = decodeULEB128(data, pos);
   const start = pos + lengthBytes;
   return {
     category: sectionCategory[sectionType],
@@ -145,7 +145,7 @@ export function createSections(wasm: Buffer) {
     const typeIndex = typeSection.add(fn.type);
     const funcIndex = functionSection.add(typeIndex);
     codeSection.add(fn.body);
-    return leb.encodeULEB128(funcIndex);
+    return encodeULEB128(funcIndex);
   };
 
   const setInstructionReplacer =

@@ -1,4 +1,4 @@
-import * as leb from '@thi.ng/leb128';
+import { decodeULEB128, encodeULEB128 } from '../leb128';
 import { BaseSection } from './base';
 import { CodeFunction, IInstructionReplacer } from './codeFunction';
 
@@ -13,12 +13,12 @@ export class CodeSection extends BaseSection {
   private readSection(buf) {
     let pos = 0;
 
-    const [numberOfFunctions, lengthBytes] = leb.decodeULEB128(buf, pos);
+    const [numberOfFunctions, lengthBytes] = decodeULEB128(buf, pos);
     pos += lengthBytes;
     // console.log('numberOfFunctions', numberOfFunctions);
 
     for (let i = 0; i < numberOfFunctions; i++) {
-      const [functionLength, functionLengthBytes] = leb.decodeULEB128(buf, pos);
+      const [functionLength, functionLengthBytes] = decodeULEB128(buf, pos);
       // console.log('functionLength', functionLength);
       pos += functionLengthBytes;
 
@@ -40,7 +40,7 @@ export class CodeSection extends BaseSection {
     const output = [
       Buffer.from([0x0a]), // section id
       Buffer.from([]),
-      Buffer.from(leb.encodeULEB128(this.functions.length)),
+      Buffer.from(encodeULEB128(this.functions.length)),
     ];
 
     for (let i = 0; i < this.functions.length; i++) {
@@ -48,7 +48,7 @@ export class CodeSection extends BaseSection {
     }
 
     const segmentLength = output.reduce((prev, curr) => prev + curr.length, -1);
-    output[1] = Buffer.from(leb.encodeULEB128(segmentLength));
+    output[1] = Buffer.from(encodeULEB128(segmentLength));
 
     return output;
   }

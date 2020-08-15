@@ -1,4 +1,4 @@
-import * as leb from '@thi.ng/leb128';
+import { decodeULEB128, encodeULEB128 } from '../leb128';
 import { longOpCodes, opcodes } from '../opcodes';
 import { BaseSection } from './base';
 
@@ -63,11 +63,11 @@ export class CodeFunction extends BaseSection {
   private readFunction() {
     let pos = 0;
 
-    const [localsGroupNumber, localsGroupNumberBytes] = leb.decodeULEB128(this.buf, pos);
+    const [localsGroupNumber, localsGroupNumberBytes] = decodeULEB128(this.buf, pos);
     pos += localsGroupNumberBytes;
     // console.log('localsGroupNumber', localsGroupNumber);
     for (let i = 0; i < localsGroupNumber; i++) {
-      const [localsCount, localsCountBytes] = leb.decodeULEB128(this.buf, pos);
+      const [localsCount, localsCountBytes] = decodeULEB128(this.buf, pos);
       pos += localsCountBytes;
       const localType = this.buf[pos++];
       // console.log('localsCount', localsCount, localType);
@@ -163,7 +163,7 @@ export class CodeFunction extends BaseSection {
     ];
 
     const segmentLength = output.reduce((prev, curr) => prev + curr.length, 0);
-    output[0] = Buffer.from(leb.encodeULEB128(segmentLength));
+    output[0] = Buffer.from(encodeULEB128(segmentLength));
 
     return output;
   }

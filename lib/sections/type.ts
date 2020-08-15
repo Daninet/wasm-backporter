@@ -1,4 +1,4 @@
-import * as leb from '@thi.ng/leb128';
+import { decodeULEB128, encodeULEB128 } from '../leb128';
 import { BaseSection } from './base';
 
 export interface IType {
@@ -40,7 +40,7 @@ function encodeTypeString(str: string): Buffer {
   }
   const chunks = [];
   const parts = str.trim().split(' ');
-  const length = Buffer.from(leb.encodeULEB128(parts.length));
+  const length = Buffer.from(encodeULEB128(parts.length));
   parts.forEach((part) => {
     chunks.push(getValueCode(part));
   });
@@ -64,7 +64,7 @@ export class TypeSection extends BaseSection {
   private readTypes() {
     let pos = 0;
 
-    const [numberOfTypes, lengthBytes] = leb.decodeULEB128(this.buf, pos);
+    const [numberOfTypes, lengthBytes] = decodeULEB128(this.buf, pos);
     pos += lengthBytes;
 
     for (let i = 0; i < numberOfTypes; i++) {
@@ -73,7 +73,7 @@ export class TypeSection extends BaseSection {
         throw new Error('Malformed WASM file - invalid function type prefix');
       }
 
-      const [numberOfInputTypes, numberOfInputTypesLength] = leb.decodeULEB128(this.buf, pos);
+      const [numberOfInputTypes, numberOfInputTypesLength] = decodeULEB128(this.buf, pos);
       pos += numberOfInputTypesLength;
 
       const inputTypes = [];
@@ -82,7 +82,7 @@ export class TypeSection extends BaseSection {
         inputTypes.push(valueType);
       }
 
-      const [numberOfOutputTypes, numberOfOutputTypesLength] = leb.decodeULEB128(this.buf, pos);
+      const [numberOfOutputTypes, numberOfOutputTypesLength] = decodeULEB128(this.buf, pos);
       pos += numberOfOutputTypesLength;
 
       const outputTypes = [];
@@ -127,13 +127,13 @@ export class TypeSection extends BaseSection {
     const output = [
       Buffer.from([0x01]), // section id
       Buffer.from([]),
-      Buffer.from(leb.encodeULEB128(this.types.length)),
+      Buffer.from(encodeULEB128(this.types.length)),
       this.buf,
       ...this.newChunks,
     ];
 
     const segmentLength = output.reduce((prev, curr) => prev + curr.length, -1);
-    output[1] = Buffer.from(leb.encodeULEB128(segmentLength));
+    output[1] = Buffer.from(encodeULEB128(segmentLength));
 
     return output;
   }

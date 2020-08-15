@@ -1,31 +1,67 @@
-import * as leb from '@thi.ng/leb128';
+import { decodeULEB128, decodeLengthULEB128 } from './leb128';
+const DEBUG = false;
 
-const noParameterHandler = (pos: number) => ({ params: [], pos });
-const uintParameter1Handler = (pos: number, data) => {
-  const [result, size] = leb.decodeULEB128(data, pos);
-  return { params: [result], pos: pos + size };
-};
+const noParameterHandler = DEBUG
+  ? (pos: number) => ({ params: [], pos })
+  : (pos: number) => ({ pos });
 
-const uintParameter2Handler = (pos: number, data) => {
-  const [result1, size1] = leb.decodeULEB128(data, pos);
-  const [result2, size2] = leb.decodeULEB128(data, pos + size1);
-  return { params: [result1, result2], pos: pos + size1 + size2 };
-};
-
-const uintVectorHandler = (pos: number, data) => {
-  const [vectorSize, vectorSizeBytes] = leb.decodeULEB128(data, pos);
-  pos += vectorSizeBytes;
-  const params = [];
-  for (let i = 0; i < vectorSize; i++) {
-    const [item, itemBytes] = leb.decodeULEB128(data, pos);
-    pos += itemBytes;
-    params.push(item);
+const uintParameter1Handler = DEBUG
+  ? (pos: number, data) => {
+    const [result, size] = decodeULEB128(data, pos);
+    return { params: [result], pos: pos + size };
   }
-  return { params, pos };
-};
+  : (pos: number, data) => ({
+    pos: pos + decodeLengthULEB128(data, pos),
+  });
 
-const f32Handler = (pos: number) => ({ params: [], pos: pos + 4 });
-const f64Handler = (pos: number) => ({ params: [], pos: pos + 8 });
+const uintParameter2Handler = DEBUG
+  ? (pos: number, data) => {
+    const [result1, size1] = decodeULEB128(data, pos);
+    const [result2, size2] = decodeULEB128(data, pos + size1);
+    return { params: [result1, result2], pos: pos + size1 + size2 };
+  }
+  : (pos: number, data) => {
+    let size = decodeLengthULEB128(data, pos);
+    size += decodeLengthULEB128(data, pos + size);
+    return { pos: pos + size };
+  };
+
+const brTableHandler = DEBUG
+  ? (pos: number, data) => {
+    const [vectorSize, vectorSizeBytes] = decodeULEB128(data, pos);
+    pos += vectorSizeBytes;
+
+    const params = [];
+    for (let i = 0; i < vectorSize; i++) {
+      const [item, itemBytes] = decodeULEB128(data, pos);
+      pos += itemBytes;
+      params.push(item);
+    }
+
+    const [label, labelBytes] = decodeULEB128(data, pos);
+    pos += labelBytes;
+    params.push(label);
+    return { params, pos };
+  }
+  : (pos: number, data) => {
+    const [vectorSize, vectorSizeBytes] = decodeULEB128(data, pos);
+    pos += vectorSizeBytes;
+
+    for (let i = 0; i < vectorSize; i++) {
+      pos += decodeLengthULEB128(data, pos);
+    }
+
+    pos += decodeLengthULEB128(data, pos);
+    return { pos };
+  };
+
+const f32Handler = DEBUG
+  ? (pos: number) => ({ params: [], pos: pos + 4 })
+  : (pos: number) => ({ pos: pos + 4 });
+
+const f64Handler = DEBUG
+  ? (pos: number) => ({ params: [], pos: pos + 8 })
+  : (pos: number) => ({ pos: pos + 8 });
 
 const illegalOpHandler = (pos) => {
   throw new Error(`Illegal instruction at pos ${pos}`);
@@ -55,7 +91,7 @@ export const opcodes = {
 
   0x0c: getHandler('br', uintParameter1Handler),
   0x0d: getHandler('br_if', uintParameter1Handler),
-  0x0e: getHandler('br_table', uintVectorHandler),
+  0x0e: getHandler('br_table', brTableHandler),
   0x0f: getHandler('return', noParameterHandler),
 
   0x10: getHandler('call', uintParameter1Handler),
