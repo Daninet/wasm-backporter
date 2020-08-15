@@ -2,8 +2,8 @@ import { decodeULEB128, encodeULEB128 } from '../leb128';
 import { BaseSection } from './base';
 
 export interface IType {
-  input: string;
-  output: string;
+  input: string[];
+  output: string[];
 }
 
 const valueTypes = {
@@ -34,17 +34,12 @@ function getValueCode(x: string): number {
   return reverseValueTypes[x];
 }
 
-function encodeTypeString(str: string): Buffer {
-  if (str === '') {
-    return Buffer.from([0x00]);
-  }
-  const chunks = [];
-  const parts = str.trim().split(' ');
-  const length = Buffer.from(encodeULEB128(parts.length));
-  parts.forEach((part) => {
-    chunks.push(getValueCode(part));
-  });
-  return Buffer.concat([length, Buffer.from(chunks)]);
+function encodeType(types: string[]): Buffer {
+  const length = Buffer.from(encodeULEB128(types.length));
+  return Buffer.concat([
+    length,
+    Buffer.from(types.map((t) => getValueCode(t))),
+  ]);
 }
 
 export class TypeSection extends BaseSection {
@@ -92,8 +87,8 @@ export class TypeSection extends BaseSection {
       }
 
       this.types.push({
-        input: inputTypes.join(' '),
-        output: outputTypes.join(' '),
+        input: inputTypes,
+        output: outputTypes,
       });
     }
 
@@ -110,9 +105,10 @@ export class TypeSection extends BaseSection {
       this.types.push(type);
       this.newChunks.push(
         Buffer.from([0x60]),
-        encodeTypeString(type.input),
-        encodeTypeString(type.output),
+        encodeType(type.input),
+        encodeType(type.output),
       );
+      // console.log('types', this.newChunks);
       return this.types.length - 1;
     }
 

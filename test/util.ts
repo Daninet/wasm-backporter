@@ -1,27 +1,38 @@
 import { transform } from '../lib/index';
-// const fs = require('fs');
+const fs = require('fs');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const wabtFactory = require('wabt');
 
 let wabt = null;
 
-export async function compileTest(instruction, wat, callback): Promise<any> {
+export async function compileTest(instructions: string[], wat, callback): Promise<any> {
   if (!wabt) {
     wabt = await wabtFactory();
   }
 
-  expect(instruction.length).toBeGreaterThan(1);
-  const instructionBuf = Buffer.from(instruction, 'hex');
+  expect(instructions.length).toBeGreaterThan(0);
 
-  const { buffer } = wabt.parseWat('file', wat, { bulk_memory: true }).toBinary({});
-  // fs.writeFileSync('in.wasm', buffer);
-  expect(Buffer.from(buffer).includes(instructionBuf)).toBe(true);
-  const instance = await WebAssembly.instantiate(buffer, {});
-  await callback(instance.instance);
+  const { buffer: originalBinary } =
+    wabt.parseWat('file', wat, { bulk_memory: true, simd: true }).toBinary({});
 
-  const newBinary = transform(buffer, {});
+  // fs.writeFileSync('in.wasm', originalBinary);
+
+  const hexBinary = Buffer.from(originalBinary).toString('hex');
+  instructions.forEach((instruction) => {
+    expect(hexBinary).toMatch(instruction);
+  });
+
+  const { instance } = await WebAssembly.instantiate(originalBinary, {});
+
+  const newBinary = transform(originalBinary, {});
+
   // fs.writeFileSync('out.wasm', newBinary);
-  expect(Buffer.from(newBinary).includes(instructionBuf)).toBe(false);
-  const newInstance = await WebAssembly.instantiate(newBinary, {});
-  await callback(newInstance.instance);
+
+  const newHexBinary = Buffer.from(newBinary).toString('hex');
+  instructions.forEach((instruction) => {
+    expect(newHexBinary).not.toMatch(instruction);
+  });
+
+  const { instance: newInstance } = await WebAssembly.instantiate(newBinary, {});
+  await callback(instance.exports, newInstance.exports);
 }

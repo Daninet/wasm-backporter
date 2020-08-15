@@ -1,6 +1,10 @@
+import { DEBUG } from '../config';
 import { decodeULEB128, encodeULEB128 } from '../leb128';
-import { longOpCodes, opcodes } from '../opcodes';
+import { readOpCode } from '../opcodes';
 import { BaseSection } from './base';
+import { IType } from './type';
+
+export type ILocalType = 'i32' | 'i64' | 'f32' | 'f64';
 
 export interface IInstruction {
   name: string;
@@ -9,9 +13,17 @@ export interface IInstruction {
   params: number[];
 }
 
-export type IInstructionReplacer = (instruction: IInstruction) => Uint8Array;
+export interface IInstructionReplacerResult {
+  getReplacement: (locals: Buffer[]) => Uint8Array;
+  locals: ILocalType[];
+}
+
+export type IInstructionReplacer = (instruction: IInstruction) => IInstructionReplacerResult;
+
 export type IInstructionReplacerWithFunction =
-  (instruction: IInstruction, fn: Uint8Array) => Uint8Array;
+  (
+    instruction: IInstruction, fnIndex?: Uint8Array, localIndices?: Uint8Array[]
+  ) => IInstructionReplacerResult;
 
 export interface IModification {
   replacement: Uint8Array;
@@ -34,27 +46,44 @@ function getLocalType(x) {
   throw new Error(`Invalid local type ${x}`);
 }
 
+function getLocalCode(x) {
+  switch (x) {
+    case 'i32':
+      return 0x7f;
+    case 'i64':
+      return 0x7e;
+    case 'f32':
+      return 0x7d;
+    case 'f64':
+      return 0x7c;
+  }
+
+  throw new Error(`Invalid local type ${x}`);
+}
+
 export class CodeFunction extends BaseSection {
   private buf = null;
 
-  // private typeIndex: number = -1;
+  private originalLocalsGroupNumber: number = -1;
 
   private locals: string[] = [];
 
+  private newLocalChunks: Buffer[] = [];
+
   private bodyStart: number = -1;
 
-  private signatures: number[] = [];
-
-  private instructionReplacer: Function = null;
+  private instructionReplacer: IInstructionReplacer = null;
 
   private modifications: IModification[] = [];
 
   private instructions: IInstruction[] = [];
 
-  constructor(dataWithoutSegmentSize: Buffer) {
+  private type: IType = null;
+
+  constructor(dataWithoutSegmentSize: Buffer, type: IType) {
     super();
     this.buf = dataWithoutSegmentSize;
-    // console.log('buf', this.buf);
+    this.type = type;
 
     this.readFunction();
     this.readInstructions();
@@ -65,58 +94,47 @@ export class CodeFunction extends BaseSection {
 
     const [localsGroupNumber, localsGroupNumberBytes] = decodeULEB128(this.buf, pos);
     pos += localsGroupNumberBytes;
-    // console.log('localsGroupNumber', localsGroupNumber);
+
     for (let i = 0; i < localsGroupNumber; i++) {
       const [localsCount, localsCountBytes] = decodeULEB128(this.buf, pos);
       pos += localsCountBytes;
       const localType = this.buf[pos++];
-      // console.log('localsCount', localsCount, localType);
-
-      for (let k = 0; k < localsCount; k++) {
-        this.locals.push(getLocalType(localType));
-      }
+      getLocalType(localType);
     }
 
-    this.bodyStart = pos;
+    // trim localGroupNumber
+    this.originalLocalsGroupNumber = localsGroupNumber;
+    this.buf = this.buf.slice(localsGroupNumberBytes);
+    this.bodyStart = pos - localsGroupNumberBytes;
   }
 
   private readInstructions() {
     let pos = this.bodyStart;
 
     while (pos < this.buf.length) {
-      const instructionPosition = pos;
-      const opcode = this.buf[pos++];
-      let opcodeData = opcodes[opcode];
-      if (!opcodeData) {
-        // read extra byte
-        const opcode2 = this.buf[pos++];
-        opcodeData = longOpCodes[opcode * 256 + opcode2];
-        if (!opcodeData) {
-          // rewind
-          pos--;
-          throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`);
-        }
+      const opcode = readOpCode(this.buf, pos);
+      pos = opcode.nextPos;
+
+      // MVP opcodes don't need storage
+      if (DEBUG || opcode.code >= 0xc0) {
+        this.instructions.push({
+          name: opcode.name,
+          pos: opcode.pos - this.bodyStart, // relative to start
+          length: pos - opcode.pos, // including all params
+          params: opcode.params,
+        });
       }
-
-      const action = opcodeData.getParamsAndPosition(pos, this.buf);
-      pos = action.pos;
-
-      this.instructions.push({
-        name: opcodeData.name,
-        pos: instructionPosition - this.bodyStart, // relative to start
-        length: pos - instructionPosition, // including all params
-        params: action.params,
-      });
     }
   }
 
   private getModifications() {
-    for (let j = 0; j < this.instructions.length; j++) {
-      const instruction = this.instructions[j];
-      const replacement = this.instructionReplacer(instruction);
-      if (replacement !== null) {
+    for (let i = 0; i < this.instructions.length; i++) {
+      const instruction = this.instructions[i];
+      const result = this.instructionReplacer(instruction);
+      if (result) {
+        const locals = result.locals?.map((local) => this.addLocal(local));
         this.modifications.push({
-          replacement,
+          replacement: result.getReplacement(locals),
           pos: instruction.pos,
           previousLength: instruction.length,
         });
@@ -153,12 +171,25 @@ export class CodeFunction extends BaseSection {
     this.instructionReplacer = replacer;
   }
 
+  // TODO reuse locals
+  private addLocal(localType: ILocalType): Buffer {
+    const newLength = this.locals.push(localType);
+    this.newLocalChunks.push(
+      Buffer.from([0x01, getLocalCode(localType)]),
+    );
+
+    const index = this.type.input.length + this.originalLocalsGroupNumber + newLength - 1;
+    return Buffer.from(encodeULEB128(index));
+  }
+
   export(): Buffer[] {
     this.getModifications();
 
     const output = [
       Buffer.from([]),
-      this.buf.slice(0, this.bodyStart), // locals
+      Buffer.from(encodeULEB128(this.originalLocalsGroupNumber + this.locals.length)),
+      this.buf.slice(0, this.bodyStart), // original locals
+      ...this.newLocalChunks, // new locals
       ...this.getModifiedInstructions(),
     ];
 

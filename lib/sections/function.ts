@@ -39,6 +39,10 @@ export class FunctionSection extends BaseSection {
     return this.signatures.length - 1;
   }
 
+  getSignitures(): number[] {
+    return this.signatures;
+  }
+
   export(): Buffer[] {
     const output = [
       Buffer.from([0x03]), // section id

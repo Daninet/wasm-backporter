@@ -3,7 +3,7 @@ import { compileTest } from './util';
 
 test('memory.copy', async () => {
   await compileTest(
-    'fc0a',
+    ['fc0a'],
     `(module
       (memory 1)
       (func $copy (param $dst i32) (param $src i32) (param $size i32) (result i32)
@@ -15,35 +15,34 @@ test('memory.copy', async () => {
         i32.load8_u)
       (export "copy" (func $copy))
       (export "memory" (memory 0)))`,
-    async ({ exports }) => {
-      const memory = Buffer.from(exports.memory.buffer);
-      const buf = Buffer.alloc(memory.length);
+    async (exports1, exports2) => {
+      const memory1 = Buffer.from(exports1.memory.buffer);
+      const memory2 = Buffer.from(exports2.memory.buffer);
+
       for (let i = 0; i < 1500; i++) {
-        memory[i] = i % 256;
-        buf[i] = i % 256;
+        memory1[i] = i % 256;
+        memory2[i] = i % 256;
       }
 
-      expect(exports.copy(1, 10, 16)).toBe(0x0a);
-      buf.copy(buf, 1, 10, 10 + 16);
-      expect(buf).toStrictEqual(memory);
+      expect(memory1).toStrictEqual(memory2);
 
-      expect(exports.copy(0, 5, 0)).toBe(0x00);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.copy(1, 10, 16)).toBe(exports2.copy(1, 10, 16));
+      expect(memory1).toStrictEqual(memory2);
 
-      buf.copy(buf, 0, 5, 5 + 3);
-      expect(exports.copy(0, 5, 3)).toBe(buf[0]);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.copy(0, 5, 0)).toBe(exports2.copy(0, 5, 0));
+      expect(memory1).toStrictEqual(memory2);
 
-      expect(exports.copy(11, 11, 3)).toBe(buf[11]);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.copy(0, 5, 3)).toBe(exports2.copy(0, 5, 3));
+      expect(memory1).toStrictEqual(memory2);
 
-      buf.copy(buf, 5, 1, 1 + 15);
-      expect(exports.copy(5, 1, 15)).toBe(buf[5]);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.copy(11, 11, 3)).toBe(exports2.copy(11, 11, 3));
+      expect(memory1).toStrictEqual(memory2);
 
-      buf.copy(buf, 129, 128, 128 + 5);
-      expect(exports.copy(129, 128, 5)).toBe(buf[129]);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.copy(5, 1, 15)).toBe(exports2.copy(5, 1, 15));
+      expect(memory1).toStrictEqual(memory2);
+
+      expect(exports1.copy(129, 128, 5)).toBe(exports2.copy(129, 128, 5));
+      expect(memory1).toStrictEqual(memory2);
     },
   );
 });

@@ -1,7 +1,8 @@
 import { CodeSection } from './code';
 import { FunctionSection } from './function';
 import { CopySection } from './copy';
-import { TypeSection } from './type';
+import { IType, TypeSection } from './type';
+import { GlobalSection } from './global';
 import { BaseSection } from './base';
 import { IInstructionReplacer } from './codeFunction';
 import { IFunctionBody } from '../polyfills/type';
@@ -41,7 +42,7 @@ const sectionCategory = [
 
   'copy',
   'copy',
-  'copy',
+  'global',
   'copy',
 
   'copy',
@@ -104,8 +105,15 @@ export function createSections(wasm: Buffer) {
 
   const sectionHandlers: BaseSection[] = [];
   let typeSection: TypeSection = null;
+  let globalSection: GlobalSection = null;
   let functionSection: FunctionSection = null;
   let codeSection: CodeSection = null;
+
+  const getFunctionTypes = (): IType[] => {
+    const allTypes = typeSection.getTypes();
+    return functionSection.getSignitures().map((s) => allTypes[s]);
+  };
+
   mergedSections.forEach((section) => {
     if (section.category === 'copy') {
       sectionHandlers.push(new CopySection(wasm.slice(section.absStart, section.end + 1)));
@@ -118,6 +126,11 @@ export function createSections(wasm: Buffer) {
       return;
     }
 
+    if (section.category === 'global') {
+      globalSection = new GlobalSection(wasm.slice(section.start, section.end + 1));
+      sectionHandlers.push(globalSection);
+    }
+
     if (section.category === 'function') {
       functionSection = new FunctionSection(wasm.slice(section.start, section.end + 1));
       sectionHandlers.push(functionSection);
@@ -125,7 +138,7 @@ export function createSections(wasm: Buffer) {
     }
 
     if (section.category === 'code') {
-      codeSection = new CodeSection(wasm.slice(section.start, section.end + 1));
+      codeSection = new CodeSection(wasm.slice(section.start, section.end + 1), getFunctionTypes());
       sectionHandlers.push(codeSection);
     }
   });
@@ -144,7 +157,7 @@ export function createSections(wasm: Buffer) {
   const addFunction = (fn: IFunctionBody): Uint8Array => {
     const typeIndex = typeSection.add(fn.type);
     const funcIndex = functionSection.add(typeIndex);
-    codeSection.add(fn.body);
+    codeSection.add(fn.body, fn.type);
     return encodeULEB128(funcIndex);
   };
 

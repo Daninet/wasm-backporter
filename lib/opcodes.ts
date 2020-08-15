@@ -1,33 +1,48 @@
+import { DEBUG } from './config';
 import { decodeULEB128, decodeLengthULEB128 } from './leb128';
-const DEBUG = false;
 
-const noParameterHandler = DEBUG
+type IOpCodeHandlerDebugResponse = { params?: number[]; pos: number; };
+type IOpCodeHandlerResponse = IOpCodeHandlerDebugResponse | number;
+
+type IOpCodeHandler = (pos: number, data: Buffer) => IOpCodeHandlerResponse;
+
+export interface IOpCode {
+  name: string;
+  getPosition: IOpCodeHandler;
+}
+
+const noParameterHandler: IOpCodeHandler = DEBUG
   ? (pos: number) => ({ params: [], pos })
-  : (pos: number) => ({ pos });
+  : (pos: number) => pos;
 
-const uintParameter1Handler = DEBUG
-  ? (pos: number, data) => {
+const oneByteHandler: IOpCodeHandler = DEBUG
+  ? (pos, data) => ({
+    params: [data[pos]],
+    pos: pos + 1,
+  })
+  : (pos) => pos + 1;
+
+const uintParameter1Handler: IOpCodeHandler = DEBUG
+  ? (pos, data) => {
     const [result, size] = decodeULEB128(data, pos);
     return { params: [result], pos: pos + size };
   }
-  : (pos: number, data) => ({
-    pos: pos + decodeLengthULEB128(data, pos),
-  });
+  : (pos, data) => pos + decodeLengthULEB128(data, pos);
 
-const uintParameter2Handler = DEBUG
-  ? (pos: number, data) => {
+const uintParameter2Handler: IOpCodeHandler = DEBUG
+  ? (pos, data) => {
     const [result1, size1] = decodeULEB128(data, pos);
     const [result2, size2] = decodeULEB128(data, pos + size1);
     return { params: [result1, result2], pos: pos + size1 + size2 };
   }
-  : (pos: number, data) => {
+  : (pos, data) => {
     let size = decodeLengthULEB128(data, pos);
     size += decodeLengthULEB128(data, pos + size);
-    return { pos: pos + size };
+    return pos + size;
   };
 
-const brTableHandler = DEBUG
-  ? (pos: number, data) => {
+const brTableHandler: IOpCodeHandler = DEBUG
+  ? (pos, data) => {
     const [vectorSize, vectorSizeBytes] = decodeULEB128(data, pos);
     pos += vectorSizeBytes;
 
@@ -43,7 +58,7 @@ const brTableHandler = DEBUG
     params.push(label);
     return { params, pos };
   }
-  : (pos: number, data) => {
+  : (pos, data) => {
     const [vectorSize, vectorSizeBytes] = decodeULEB128(data, pos);
     pos += vectorSizeBytes;
 
@@ -52,25 +67,31 @@ const brTableHandler = DEBUG
     }
 
     pos += decodeLengthULEB128(data, pos);
-    return { pos };
+    return pos;
   };
 
-const f32Handler = DEBUG
-  ? (pos: number) => ({ params: [], pos: pos + 4 })
-  : (pos: number) => ({ pos: pos + 4 });
+const f32Handler: IOpCodeHandler = DEBUG
+  ? (pos) => ({ params: [], pos: pos + 4 })
+  : (pos) => ({ pos: pos + 4 });
 
-const f64Handler = DEBUG
-  ? (pos: number) => ({ params: [], pos: pos + 8 })
-  : (pos: number) => ({ pos: pos + 8 });
+const f64Handler: IOpCodeHandler = DEBUG
+  ? (pos) => ({ params: [], pos: pos + 8 })
+  : (pos) => ({ pos: pos + 8 });
 
-const illegalOpHandler = (pos) => {
+const simd16Bytes: IOpCodeHandler = DEBUG
+  ? (pos, data) => ({
+    params: Array.from(data.subarray(pos, pos + 16)),
+    pos: pos + 16,
+  })
+  : (pos) => pos + 16;
+
+const illegalOpHandler: IOpCodeHandler = (pos) => {
   throw new Error(`Illegal instruction at pos ${pos}`);
 };
 
-const getHandler = (name: string, handler: Function) => ({
+const getHandler = (name: string, handler: IOpCodeHandler): IOpCode => ({
   name,
-  getPosition: (pos: number, data) => handler(pos, data).pos,
-  getParamsAndPosition: handler, // used for debugging
+  getPosition: (pos, data) => handler(pos, data),
 });
 
 export const opcodes = {
@@ -306,15 +327,17 @@ Object.keys(opcodes).forEach((opcode) => {
 export const reverseOpCodes = reverseMap;
 
 export const longOpCodes = {
-  0xfc00: getHandler('i32.trunc_sat_f32_s - TODO', illegalOpHandler),
-  0xfc01: getHandler('i32.trunc_sat_f32_u - TODO', illegalOpHandler),
-  0xfc02: getHandler('i32.trunc_sat_f64_s - TODO', illegalOpHandler),
-  0xfc03: getHandler('i32.trunc_sat_f64_u - TODO', illegalOpHandler),
-  0xfc04: getHandler('i64.trunc_sat_f32_s - TODO', illegalOpHandler),
-  0xfc05: getHandler('i64.trunc_sat_f32_u - TODO', illegalOpHandler),
-  0xfc06: getHandler('i64.trunc_sat_f64_s - TODO', illegalOpHandler),
-  0xfc07: getHandler('i64.trunc_sat_f64_u - TODO', illegalOpHandler),
+  // Non-trapping float-to-int conversions
+  0xfc00: getHandler('i32.trunc_sat_f32_s', noParameterHandler),
+  0xfc01: getHandler('i32.trunc_sat_f32_u', noParameterHandler),
+  0xfc02: getHandler('i32.trunc_sat_f64_s', noParameterHandler),
+  0xfc03: getHandler('i32.trunc_sat_f64_u', noParameterHandler),
+  0xfc04: getHandler('i64.trunc_sat_f32_s', noParameterHandler),
+  0xfc05: getHandler('i64.trunc_sat_f32_u', noParameterHandler),
+  0xfc06: getHandler('i64.trunc_sat_f64_s', noParameterHandler),
+  0xfc07: getHandler('i64.trunc_sat_f64_u', noParameterHandler),
 
+  // Bulk memory
   0xfc08: getHandler('memory.init - TODO', illegalOpHandler),
   0xfc09: getHandler('data.drop', uintParameter1Handler),
   0xfc0a: getHandler('memory.copy', uintParameter2Handler),
@@ -322,4 +345,220 @@ export const longOpCodes = {
   0xfc0c: getHandler('table.init - TODO', illegalOpHandler),
   0xfc0d: getHandler('elem.drop', uintParameter1Handler),
   0xfc0e: getHandler('table.copy - TODO', illegalOpHandler),
+
+  // SIMD
+  0xfd00: getHandler('v128.load', uintParameter2Handler),
+  0xfd01: getHandler('i16x8.load8x8_s', uintParameter2Handler),
+  0xfd02: getHandler('i16x8.load8x8_u', uintParameter2Handler),
+  0xfd03: getHandler('i32x4.load16x4_s', uintParameter2Handler),
+  0xfd04: getHandler('i32x4.load16x4_u', uintParameter2Handler),
+  0xfd05: getHandler('i64x2.load32x2_s', uintParameter2Handler),
+  0xfd06: getHandler('i64x2.load32x2_u', uintParameter2Handler),
+  0xfd07: getHandler('v8x16.load_splat', uintParameter2Handler),
+  0xfd08: getHandler('v16x8.load_splat', uintParameter2Handler),
+  0xfd09: getHandler('v32x4.load_splat', uintParameter2Handler),
+  0xfd0a: getHandler('v64x2.load_splat', uintParameter2Handler),
+  0xfd0b: getHandler('v128.store', uintParameter2Handler),
+  0xfd0c: getHandler('v128.const', simd16Bytes),
+  0xfd0d: getHandler('v8x16.shuffle', simd16Bytes),
+  0xfd0e: getHandler('v8x16.swizzle', noParameterHandler),
+  0xfd0f: getHandler('i8x16.splat', noParameterHandler),
+  0xfd10: getHandler('i16x8.splat', noParameterHandler),
+  0xfd11: getHandler('i32x4.splat', noParameterHandler),
+  0xfd12: getHandler('i64x2.splat', noParameterHandler),
+  0xfd13: getHandler('f32x4.splat', noParameterHandler),
+  0xfd14: getHandler('f64x2.splat', noParameterHandler),
+  0xfd15: getHandler('i8x16.extract_lane_s', oneByteHandler),
+  0xfd16: getHandler('i8x16.extract_lane_u', oneByteHandler),
+  0xfd17: getHandler('i8x16.replace_lane', oneByteHandler),
+  0xfd18: getHandler('i16x8.extract_lane_s', oneByteHandler),
+  0xfd19: getHandler('i16x8.extract_lane_u', oneByteHandler),
+  0xfd1a: getHandler('i16x8.replace_lane', oneByteHandler),
+  0xfd1b: getHandler('i32x4.extract_lane', oneByteHandler),
+  0xfd1c: getHandler('i32x4.replace_lane', oneByteHandler),
+  0xfd1d: getHandler('i64x2.extract_lane', oneByteHandler),
+  0xfd1e: getHandler('i64x2.replace_lane', oneByteHandler),
+  0xfd1f: getHandler('f32x4.extract_lane', oneByteHandler),
+  0xfd20: getHandler('f32x4.replace_lane', oneByteHandler),
+  0xfd21: getHandler('f64x2.extract_lane', oneByteHandler),
+  0xfd22: getHandler('f64x2.replace_lane', oneByteHandler),
+  0xfd23: getHandler('i8x16.eq', noParameterHandler),
+  0xfd24: getHandler('i8x16.ne', noParameterHandler),
+  0xfd25: getHandler('i8x16.lt_s', noParameterHandler),
+  0xfd26: getHandler('i8x16.lt_u', noParameterHandler),
+  0xfd27: getHandler('i8x16.gt_s', noParameterHandler),
+  0xfd28: getHandler('i8x16.gt_u', noParameterHandler),
+  0xfd29: getHandler('i8x16.le_s', noParameterHandler),
+  0xfd2a: getHandler('i8x16.le_u', noParameterHandler),
+  0xfd2b: getHandler('i8x16.ge_s', noParameterHandler),
+  0xfd2c: getHandler('i8x16.ge_u', noParameterHandler),
+  0xfd2d: getHandler('i16x8.eq', noParameterHandler),
+  0xfd2e: getHandler('i16x8.ne', noParameterHandler),
+  0xfd2f: getHandler('i16x8.lt_s', noParameterHandler),
+  0xfd30: getHandler('i16x8.lt_u', noParameterHandler),
+  0xfd31: getHandler('i16x8.gt_s', noParameterHandler),
+  0xfd32: getHandler('i16x8.gt_u', noParameterHandler),
+  0xfd33: getHandler('i16x8.le_s', noParameterHandler),
+  0xfd34: getHandler('i16x8.le_u', noParameterHandler),
+  0xfd35: getHandler('i16x8.ge_s', noParameterHandler),
+  0xfd36: getHandler('i16x8.ge_u', noParameterHandler),
+  0xfd37: getHandler('i32x4.eq', noParameterHandler),
+  0xfd38: getHandler('i32x4.ne', noParameterHandler),
+  0xfd39: getHandler('i32x4.lt_s', noParameterHandler),
+  0xfd3a: getHandler('i32x4.lt_u', noParameterHandler),
+  0xfd3b: getHandler('i32x4.gt_s', noParameterHandler),
+  0xfd3c: getHandler('i32x4.gt_u', noParameterHandler),
+  0xfd3d: getHandler('i32x4.le_s', noParameterHandler),
+  0xfd3e: getHandler('i32x4.le_u', noParameterHandler),
+  0xfd3f: getHandler('i32x4.ge_s', noParameterHandler),
+  0xfd40: getHandler('i32x4.ge_u', noParameterHandler),
+  0xfd41: getHandler('f32x4.eq', noParameterHandler),
+  0xfd42: getHandler('f32x4.ne', noParameterHandler),
+  0xfd43: getHandler('f32x4.lt', noParameterHandler),
+  0xfd44: getHandler('f32x4.gt', noParameterHandler),
+  0xfd45: getHandler('f32x4.le', noParameterHandler),
+  0xfd46: getHandler('f32x4.ge', noParameterHandler),
+  0xfd47: getHandler('f64x2.eq', noParameterHandler),
+  0xfd48: getHandler('f64x2.ne', noParameterHandler),
+  0xfd49: getHandler('f64x2.lt', noParameterHandler),
+  0xfd4a: getHandler('f64x2.gt', noParameterHandler),
+  0xfd4b: getHandler('f64x2.le', noParameterHandler),
+  0xfd4c: getHandler('f64x2.ge', noParameterHandler),
+  0xfd4d: getHandler('v128.not', noParameterHandler),
+  0xfd4e: getHandler('v128.and', noParameterHandler),
+  0xfd4f: getHandler('v128.andnot', noParameterHandler),
+  0xfd50: getHandler('v128.or', noParameterHandler),
+  0xfd51: getHandler('v128.xor', noParameterHandler),
+  0xfd52: getHandler('v128.bitselect', noParameterHandler),
+  0xfd60: getHandler('i8x16.abs', noParameterHandler),
+  0xfd61: getHandler('i8x16.neg', noParameterHandler),
+  0xfd62: getHandler('i8x16.any_true', noParameterHandler),
+  0xfd63: getHandler('i8x16.all_true', noParameterHandler),
+  0xfd64: getHandler('i8x16.bitmask', noParameterHandler),
+  0xfd65: getHandler('i8x16.narrow_i16x8_s', noParameterHandler),
+  0xfd66: getHandler('i8x16.narrow_i16x8_u', noParameterHandler),
+  0xfd6b: getHandler('i8x16.shl', noParameterHandler),
+  0xfd6c: getHandler('i8x16.shr_s', noParameterHandler),
+  0xfd6d: getHandler('i8x16.shr_u', noParameterHandler),
+  0xfd6e: getHandler('i8x16.add', noParameterHandler),
+  0xfd6f: getHandler('i8x16.add_saturate_s', noParameterHandler),
+  0xfd70: getHandler('i8x16.add_saturate_u', noParameterHandler),
+  0xfd71: getHandler('i8x16.sub', noParameterHandler),
+  0xfd72: getHandler('i8x16.sub_saturate_s', noParameterHandler),
+  0xfd73: getHandler('i8x16.sub_saturate_u', noParameterHandler),
+  0xfd76: getHandler('i8x16.min_s', noParameterHandler),
+  0xfd77: getHandler('i8x16.min_u', noParameterHandler),
+  0xfd78: getHandler('i8x16.max_s', noParameterHandler),
+  0xfd79: getHandler('i8x16.max_u', noParameterHandler),
+  0xfd7b: getHandler('i8x16.avgr_u', noParameterHandler),
+  0xfd80: getHandler('i16x8.abs', noParameterHandler),
+  0xfd81: getHandler('i16x8.neg', noParameterHandler),
+  0xfd82: getHandler('i16x8.any_true', noParameterHandler),
+  0xfd83: getHandler('i16x8.all_true', noParameterHandler),
+  0xfd84: getHandler('i16x8.bitmask', noParameterHandler),
+  0xfd85: getHandler('i16x8.narrow_i32x4_s', noParameterHandler),
+  0xfd86: getHandler('i16x8.narrow_i32x4_u', noParameterHandler),
+  0xfd87: getHandler('i16x8.widen_low_i8x16_s', noParameterHandler),
+  0xfd88: getHandler('i16x8.widen_high_i8x16_s', noParameterHandler),
+  0xfd89: getHandler('i16x8.widen_low_i8x16_u', noParameterHandler),
+  0xfd8a: getHandler('i16x8.widen_high_i8x16_u', noParameterHandler),
+  0xfd8b: getHandler('i16x8.shl', noParameterHandler),
+  0xfd8c: getHandler('i16x8.shr_s', noParameterHandler),
+  0xfd8d: getHandler('i16x8.shr_u', noParameterHandler),
+  0xfd8e: getHandler('i16x8.add', noParameterHandler),
+  0xfd8f: getHandler('i16x8.add_saturate_s', noParameterHandler),
+  0xfd90: getHandler('i16x8.add_saturate_u', noParameterHandler),
+  0xfd91: getHandler('i16x8.sub', noParameterHandler),
+  0xfd92: getHandler('i16x8.sub_saturate_s', noParameterHandler),
+  0xfd93: getHandler('i16x8.sub_saturate_u', noParameterHandler),
+  0xfd95: getHandler('i16x8.mul', noParameterHandler),
+  0xfd96: getHandler('i16x8.min_s', noParameterHandler),
+  0xfd97: getHandler('i16x8.min_u', noParameterHandler),
+  0xfd98: getHandler('i16x8.max_s', noParameterHandler),
+  0xfd99: getHandler('i16x8.max_u', noParameterHandler),
+  0xfd9b: getHandler('i16x8.avgr_u', noParameterHandler),
+  0xfda0: getHandler('i32x4.abs', noParameterHandler),
+  0xfda1: getHandler('i32x4.neg', noParameterHandler),
+  0xfda2: getHandler('i32x4.any_true', noParameterHandler),
+  0xfda3: getHandler('i32x4.all_true', noParameterHandler),
+  0xfda4: getHandler('i32x4.bitmask', noParameterHandler),
+  0xfda7: getHandler('i32x4.widen_low_i16x8_s', noParameterHandler),
+  0xfda8: getHandler('i32x4.widen_high_i16x8_s', noParameterHandler),
+  0xfda9: getHandler('i32x4.widen_low_i16x8_u', noParameterHandler),
+  0xfdaa: getHandler('i32x4.widen_high_i16x8_u', noParameterHandler),
+  0xfdab: getHandler('i32x4.shl', noParameterHandler),
+  0xfdac: getHandler('i32x4.shr_s', noParameterHandler),
+  0xfdad: getHandler('i32x4.shr_u', noParameterHandler),
+  0xfdae: getHandler('i32x4.add', noParameterHandler),
+  0xfdb1: getHandler('i32x4.sub', noParameterHandler),
+  0xfdb5: getHandler('i32x4.mul', noParameterHandler),
+  0xfdb6: getHandler('i32x4.min_s', noParameterHandler),
+  0xfdb7: getHandler('i32x4.min_u', noParameterHandler),
+  0xfdb8: getHandler('i32x4.max_s', noParameterHandler),
+  0xfdb9: getHandler('i32x4.max_u', noParameterHandler),
+  0xfdc1: getHandler('i64x2.neg', noParameterHandler),
+  0xfdcb: getHandler('i64x2.shl', noParameterHandler),
+  0xfdcc: getHandler('i64x2.shr_s', noParameterHandler),
+  0xfdcd: getHandler('i64x2.shr_u', noParameterHandler),
+  0xfdce: getHandler('i64x2.add', noParameterHandler),
+  0xfdd1: getHandler('i64x2.sub', noParameterHandler),
+  0xfdd5: getHandler('i64x2.mul', noParameterHandler),
+  0xfde0: getHandler('f32x4.abs', noParameterHandler),
+  0xfde1: getHandler('f32x4.neg', noParameterHandler),
+  0xfde3: getHandler('f32x4.sqrt', noParameterHandler),
+  0xfde4: getHandler('f32x4.add', noParameterHandler),
+  0xfde5: getHandler('f32x4.sub', noParameterHandler),
+  0xfde6: getHandler('f32x4.mul', noParameterHandler),
+  0xfde7: getHandler('f32x4.div', noParameterHandler),
+  0xfde8: getHandler('f32x4.min', noParameterHandler),
+  0xfde9: getHandler('f32x4.max', noParameterHandler),
+  0xfdec: getHandler('f64x2.abs', noParameterHandler),
+  0xfded: getHandler('f64x2.neg', noParameterHandler),
+  0xfdef: getHandler('f64x2.sqrt', noParameterHandler),
+  0xfdf0: getHandler('f64x2.add', noParameterHandler),
+  0xfdf1: getHandler('f64x2.sub', noParameterHandler),
+  0xfdf2: getHandler('f64x2.mul', noParameterHandler),
+  0xfdf3: getHandler('f64x2.div', noParameterHandler),
+  0xfdf4: getHandler('f64x2.min', noParameterHandler),
+  0xfdf5: getHandler('f64x2.max', noParameterHandler),
+  0xfdf8: getHandler('i32x4.trunc_sat_f32x4_s', noParameterHandler),
+  0xfdf9: getHandler('i32x4.trunc_sat_f32x4_u', noParameterHandler),
+  0xfdfa: getHandler('f32x4.convert_i32x4_s', noParameterHandler),
+  0xfdfb: getHandler('f32x4.convert_i32x4_u', noParameterHandler),
 };
+
+export interface IOpCodeResult {
+  code: number;
+  name: string;
+  pos: number;
+  nextPos: number;
+  params?: number[]; // only when in DEBUG mode
+}
+
+export function readOpCode(buf: Buffer, pos: number): IOpCodeResult {
+  const startPosition = pos;
+  const opcode = buf[pos++];
+  let fullOpcode = opcode;
+  let opcodeData: IOpCode = opcodes[opcode];
+  if (!opcodeData) {
+    // read extra byte
+    const opcode2 = buf[pos++];
+    fullOpcode = opcode * 256 + opcode2;
+    opcodeData = longOpCodes[fullOpcode];
+    if (!opcodeData) {
+      // rewind
+      pos--;
+      throw new Error(`Invalid opcode 0x${opcode.toString(16)} at ${pos - 1}`);
+    }
+  }
+
+  const opExecValue = opcodeData.getPosition(pos, buf);
+
+  return {
+    name: opcodeData.name,
+    code: fullOpcode,
+    pos: startPosition,
+    nextPos: DEBUG ? (opExecValue as IOpCodeHandlerDebugResponse).pos : opExecValue as number,
+    params: DEBUG ? (opExecValue as IOpCodeHandlerDebugResponse).params : null,
+  };
+}

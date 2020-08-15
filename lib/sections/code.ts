@@ -1,12 +1,16 @@
 import { decodeULEB128, encodeULEB128 } from '../leb128';
 import { BaseSection } from './base';
 import { CodeFunction, IInstructionReplacer } from './codeFunction';
+import { IType } from './type';
 
 export class CodeSection extends BaseSection {
   private functions: CodeFunction[] = [];
 
-  constructor(dataWithoutSegmentSize: Buffer) {
+  private types: IType[] = null;
+
+  constructor(dataWithoutSegmentSize: Buffer, types: IType[]) {
     super();
+    this.types = types;
     this.readSection(dataWithoutSegmentSize);
   }
 
@@ -22,14 +26,17 @@ export class CodeSection extends BaseSection {
       // console.log('functionLength', functionLength);
       pos += functionLengthBytes;
 
-      this.functions.push(new CodeFunction(buf.slice(pos, pos + functionLength)));
+      this.functions.push(
+        new CodeFunction(buf.slice(pos, pos + functionLength), this.types[i]),
+      );
       pos += functionLength;
     }
   }
 
   // body includes local vector + opcodes
-  add(fnBody: Uint8Array): void {
-    this.functions.push(new CodeFunction(Buffer.from(fnBody)));
+  add(fnBody: Uint8Array, type: IType): void {
+    this.types.push(type);
+    this.functions.push(new CodeFunction(Buffer.from(fnBody), type));
   }
 
   setInstructionReplacer(replacer: IInstructionReplacer): void {

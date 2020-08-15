@@ -1,13 +1,8 @@
 /* eslint-disable indent */
 /* eslint-disable dot-notation */
-import type { IPolyfill } from './type';
+import { IPolyfill } from './type';
 
 export const dataDrop: IPolyfill = {
-  function: null,
-  replacer: (instruction) => {
-    if (instruction.name === 'data.drop') {
-      return new Uint8Array([]);
-    }
-    return null;
-  },
+  match: (instruction) => instruction.name === 'data.drop',
+  replacer: () => new Uint8Array([]),
 };

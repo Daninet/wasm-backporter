@@ -6,7 +6,7 @@ import type { IFunctionBody, IPolyfill } from './type';
 const op = reverseOpCodes;
 
 const polyfill: IFunctionBody = {
-  type: { input: 'i32 i32 i32', output: '' },
+  type: { input: ['i32', 'i32', 'i32'], output: [] },
   body: new Uint8Array([
     0x00, // zero local groups
     op['block'], 0x40,
@@ -34,13 +34,11 @@ const polyfill: IFunctionBody = {
 
 export const memoryFill: IPolyfill = {
   function: polyfill,
+  match: (instruction) => instruction.name === 'memory.fill',
   replacer: (instruction, funcIndex) => {
-    if (instruction.name === 'memory.fill') {
-      const fnIndexArr = Array.from(funcIndex);
-      return new Uint8Array([
-        op['call'], ...fnIndexArr,
-      ]);
-    }
-    return null;
+    const fnIndexArr = Array.from(funcIndex);
+    return new Uint8Array([
+      op['call'], ...fnIndexArr,
+    ]);
   },
 };

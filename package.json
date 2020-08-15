@@ -10,7 +10,9 @@
     "build": "sh -c ./scripts/build.sh",
     "eslint": "eslint lib/**/*.ts test/**/*.ts",
     "prepublishOnly": "",
-    "test": "node --expose-gc ./node_modules/.bin/jest --coverage --logHeapUsage"
+    "tsc": "npx tsc --noEmit",
+    "test": "node --expose-gc --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/.bin/jest --coverage --logHeapUsage",
+    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdLoadSplat"
   },
   "repository": {
     "type": "git",
@@ -43,15 +45,15 @@
   "homepage": "https://github.com/Daninet/wasm-backporter#readme",
   "author": "Dani Biró <danibiro93@gmail.com> (https://danibiro.com)",
   "license": "MIT",
-  "dependencies": {
-    "@thi.ng/leb128": "^1.0.28"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-typescript": "^5.0.2",
     "@types/jest": "^26.0.7",
+    "@types/node": "^14.0.27",
     "@typescript-eslint/eslint-plugin": "^3.7.0",
     "@typescript-eslint/parser": "^3.7.0",
+    "cross-env": "^7.0.2",
     "eslint": "^7.5.0",
     "eslint-config-airbnb": "^18.2.0",
     "eslint-config-standard": "^14.1.1",
@@ -67,7 +69,6 @@
     "ts-node": "^8.10.2",
     "tslib": "^2.0.0",
     "typescript": "^3.9.7",
-    "wabt": "^1.0.19",
-    "@types/node": "^14.0.27"
+    "wabt": "1.0.19-nightly.20200808"
   }
 }

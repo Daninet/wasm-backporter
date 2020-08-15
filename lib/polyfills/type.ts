@@ -1,4 +1,4 @@
-import { IInstructionReplacerWithFunction } from '../sections/codeFunction';
+import { IInstruction, ILocalType } from '../sections/codeFunction';
 import { IType } from '../sections/type';
 
 export interface IFunctionBody {
@@ -7,6 +7,10 @@ export interface IFunctionBody {
 }
 
 export interface IPolyfill {
-  function: IFunctionBody;
-  replacer: IInstructionReplacerWithFunction;
+  function?: IFunctionBody;
+  locals?: ILocalType[];
+  match: (instruction: IInstruction) => boolean;
+  replacer: (
+    instruction: IInstruction, fnIndex: Uint8Array, localIndices: Uint8Array[]
+  ) => Uint8Array;
 }

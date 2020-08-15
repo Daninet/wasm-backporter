@@ -3,7 +3,7 @@ import { compileTest } from './util';
 
 test('memory.fill', async () => {
   await compileTest(
-    'fc0b',
+    ['fc0b'],
     `(module
       (memory 1)
       (func $fill (param $dst i32) (param $value i32) (param $size i32) (result i32)
@@ -15,25 +15,24 @@ test('memory.fill', async () => {
         i32.load8_u)
       (export "fill" (func $fill))
       (export "memory" (memory 0)))`,
-    async ({ exports }) => {
-      const memory = Buffer.from(exports.memory.buffer);
-      const buf = Buffer.alloc(memory.length);
-      expect(memory.every((item) => item === 0)).toBe(true);
+    async (exports1, exports2) => {
+      const memory1 = Buffer.from(exports1.memory.buffer);
+      const memory2 = Buffer.from(exports2.memory.buffer);
 
-      expect(exports.fill(0, 0xBE, 16)).toBe(0xBE);
-      buf.fill(0xBE, 0, 16);
-      expect(buf).toStrictEqual(memory);
+      expect(memory1.every((item) => item === 0)).toBe(true);
+      expect(memory2.every((item) => item === 0)).toBe(true);
 
-      expect(exports.fill(0, 0x12, 0)).toBe(0xBE);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.fill(0, 0xBE, 16)).toBe(exports2.fill(0, 0xBE, 16));
+      expect(memory1).toStrictEqual(memory2);
 
-      expect(exports.fill(15, 0x23, 1)).toBe(0x23);
-      buf.fill(0x23, 15, 15 + 1);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.fill(0, 0x12, 0)).toBe(exports2.fill(0, 0x12, 0));
+      expect(memory1).toStrictEqual(memory2);
 
-      expect(exports.fill(1500, 0x99, 700)).toBe(0x99);
-      buf.fill(0x99, 1500, 1500 + 700);
-      expect(buf).toStrictEqual(memory);
+      expect(exports1.fill(15, 0x23, 1)).toBe(exports2.fill(15, 0x23, 1));
+      expect(memory1).toStrictEqual(memory2);
+
+      expect(exports1.fill(1500, 0x99, 700)).toBe(exports2.fill(1500, 0x99, 700));
+      expect(memory1).toStrictEqual(memory2);
     },
   );
 });
