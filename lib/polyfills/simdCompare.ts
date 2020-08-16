@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 /* eslint-disable dot-notation */
-import { U16_MAX, U32_MAX, U8_MAX } from '.';
+import { U16_MAX, U32_MAX, U8_MAX } from './util';
 import { reverseOpCodes } from '../opcodes';
 import type { IPolyfill } from './type';
 

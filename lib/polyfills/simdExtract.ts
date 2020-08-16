@@ -1,7 +1,7 @@
 /* eslint-disable indent */
 /* eslint-disable dot-notation */
 import { encodeULEB128 } from '../leb128';
-import { U16_MAX, U8_MAX } from '.';
+import { U16_MAX, U8_MAX } from './util';
 import { reverseOpCodes } from '../opcodes';
 import type { IPolyfill } from './type';
 

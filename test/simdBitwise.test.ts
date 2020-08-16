@@ -210,6 +210,30 @@ test('shl + shr_s + shr_u', async () => {
         i16x8.shr_s
         v128.store)
 
+      (func $i8x16shl (param $src i32) (param $v i32) (param $dst i32)
+        get_local $dst
+        get_local $src
+        v128.load
+        get_local $v
+        i8x16.shl
+        v128.store)
+
+      (func $i8x16shr_u (param $src i32) (param $v i32) (param $dst i32)
+        get_local $dst
+        get_local $src
+        v128.load
+        get_local $v
+        i8x16.shr_u
+        v128.store)
+
+      (func $i8x16shr_s (param $src i32) (param $v i32) (param $dst i32)
+        get_local $dst
+        get_local $src
+        v128.load
+        get_local $v
+        i8x16.shr_s
+        v128.store)
+
       (export "i64x2shl" (func $i64x2shl))
       (export "i64x2shr_u" (func $i64x2shr_u))
       (export "i64x2shr_s" (func $i64x2shr_s))
@@ -219,6 +243,9 @@ test('shl + shr_s + shr_u', async () => {
       (export "i16x8shl" (func $i16x8shl))
       (export "i16x8shr_u" (func $i16x8shr_u))
       (export "i16x8shr_s" (func $i16x8shr_s))
+      (export "i8x16shl" (func $i8x16shl))
+      (export "i8x16shr_u" (func $i8x16shr_u))
+      (export "i8x16shr_s" (func $i8x16shr_s))
       (export "memory" (memory 0)))`,
     async (exports1, exports2) => {
       const memory1 = Buffer.from(exports1.memory.buffer);
@@ -228,6 +255,7 @@ test('shl + shr_s + shr_u', async () => {
         'i64x2shl', 'i64x2shr_u', 'i64x2shr_s',
         'i32x4shl', 'i32x4shr_u', 'i32x4shr_s',
         'i16x8shl', 'i16x8shr_u', 'i16x8shr_s',
+        'i8x16shl', 'i8x16shr_u', 'i8x16shr_s',
       ];
 
       for (let z = 0; z < fn.length; z++) {

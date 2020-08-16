@@ -12,7 +12,7 @@
     "prepublishOnly": "",
     "tsc": "npx tsc --noEmit",
     "test": "node --expose-gc --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/.bin/jest --coverage --logHeapUsage",
-    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdBitwise"
+    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdArithmetic"
   },
   "repository": {
     "type": "git",
