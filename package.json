@@ -12,7 +12,7 @@
     "prepublishOnly": "",
     "tsc": "npx tsc --noEmit",
     "test": "node --expose-gc --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/.bin/jest --coverage --logHeapUsage",
-    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdArithmetic"
+    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdBitmask"
   },
   "repository": {
     "type": "git",
@@ -69,6 +69,6 @@
     "ts-node": "^8.10.2",
     "tslib": "^2.0.0",
     "typescript": "^3.9.7",
-    "wabt": "1.0.19-nightly.20200808"
+    "wabt": "1.0.19-nightly.20200821"
   }
 }
