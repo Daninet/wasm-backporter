@@ -238,9 +238,9 @@ test('i32x4 add + sub + mul + neg + abs', async () => {
   );
 });
 
-test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs', async () => {
+test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs + avgr', async () => {
   await compileTest(
-    ['fd8e', 'fd91', 'fd95', 'fd81', 'fd90', 'fd8f', 'fd92', 'fd93', 'fd80'],
+    ['fd8e', 'fd91', 'fd95', 'fd81', 'fd90', 'fd8f', 'fd92', 'fd93', 'fd80', 'fd9b'],
     `(module
       (memory 1)
       (func $add (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -306,6 +306,15 @@ test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs', async ()
         i16x8.mul
         v128.store)
 
+      (func $avgr (param $srca i32) (param $srcb i32) (param $dst i32)
+        get_local $dst
+        get_local $srca
+        v128.load
+        get_local $srcb
+        v128.load
+        i16x8.avgr_u
+        v128.store)
+
       (func $neg (param $src i32) (param $dst i32)
         get_local $dst
         get_local $src
@@ -327,6 +336,7 @@ test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs', async ()
       (export "sub_saturate_u" (func $sub_saturate_u))
       (export "sub_saturate_s" (func $sub_saturate_s))
       (export "mul" (func $mul))
+      (export "avgr" (func $avgr))
       (export "neg" (func $neg))
       (export "abs" (func $abs))
       (export "memory" (memory 0)))`,
@@ -334,7 +344,7 @@ test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs', async ()
       const memory1 = Buffer.from(exports1.memory.buffer);
       const memory2 = Buffer.from(exports2.memory.buffer);
 
-      const fn = ['add', 'add_saturate_u', 'add_saturate_s', 'sub', 'sub_saturate_u', 'sub_saturate_s', 'mul'];
+      const fn = ['add', 'add_saturate_u', 'add_saturate_s', 'sub', 'sub_saturate_u', 'sub_saturate_s', 'mul', 'avgr'];
 
       for (let z = 0; z < fn.length; z++) {
         for (let i = 0; i < 16; i++) {
@@ -441,9 +451,9 @@ test('i16x8 add + add_saturate + sub + sub_saturate + mul + neg + abs', async ()
   );
 });
 
-test('i8x16 add + add_saturate + sub + sub_saturate + neg', async () => {
+test('i8x16 add + add_saturate + sub + sub_saturate + neg + avgr', async () => {
   await compileTest(
-    ['fd6e', 'fd6f', 'fd70', 'fd71', 'fd72', 'fd73', 'fd61', 'fd60'],
+    ['fd6e', 'fd6f', 'fd70', 'fd71', 'fd72', 'fd73', 'fd61', 'fd60', 'fd7b'],
     `(module
       (memory 1)
       (func $add (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -500,6 +510,15 @@ test('i8x16 add + add_saturate + sub + sub_saturate + neg', async () => {
         i8x16.sub_saturate_s
         v128.store)
 
+      (func $avgr (param $srca i32) (param $srcb i32) (param $dst i32)
+        get_local $dst
+        get_local $srca
+        v128.load
+        get_local $srcb
+        v128.load
+        i8x16.avgr_u
+        v128.store)
+
       (func $neg (param $src i32) (param $dst i32)
         get_local $dst
         get_local $src
@@ -520,6 +539,7 @@ test('i8x16 add + add_saturate + sub + sub_saturate + neg', async () => {
       (export "sub" (func $sub))
       (export "sub_saturate_u" (func $sub_saturate_u))
       (export "sub_saturate_s" (func $sub_saturate_s))
+      (export "avgr" (func $avgr))
       (export "neg" (func $neg))
       (export "abs" (func $abs))
       (export "memory" (memory 0)))`,
@@ -527,7 +547,7 @@ test('i8x16 add + add_saturate + sub + sub_saturate + neg', async () => {
       const memory1 = Buffer.from(exports1.memory.buffer);
       const memory2 = Buffer.from(exports2.memory.buffer);
 
-      const fn = ['add', 'add_saturate_u', 'add_saturate_s', 'sub', 'sub_saturate_u', 'sub_saturate_s', 'neg'];
+      const fn = ['add', 'add_saturate_u', 'add_saturate_s', 'sub', 'sub_saturate_u', 'sub_saturate_s', 'neg', 'avgr'];
 
       for (let z = 0; z < fn.length; z++) {
         for (let i = 0; i < 16; i++) {

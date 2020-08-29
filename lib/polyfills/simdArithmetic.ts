@@ -327,6 +327,20 @@ export const i16x8Abs: IPolyfill = {
   ),
 };
 
+export const i16x8AvgrU: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'i16x8.avgr_u',
+  replacer: (instruction, fnIndex, localIndices) => (
+    i16x8Op([
+      op['i32.add'],
+      op['i32.const'], 0x01,
+      op['i32.add'],
+      op['i32.const'], 0x01,
+      op['i32.shr_u'],
+    ], localIndices)
+  ),
+};
+
 function i8x16Op(instructions: number[], localIndices: Uint8Array[]): Uint8Array {
   const buf = [];
 
@@ -456,6 +470,20 @@ export const i8x16SubSaturateS: IPolyfill = {
       op['i32.const'], ...S8_MAX,
       op['i32.le_s'],
       op['select'],
+    ], localIndices)
+  ),
+};
+
+export const i8x16AvgrU: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'i8x16.avgr_u',
+  replacer: (instruction, fnIndex, localIndices) => (
+    i8x16Op([
+      op['i32.add'],
+      op['i32.const'], 0x01,
+      op['i32.add'],
+      op['i32.const'], 0x01,
+      op['i32.shr_u'],
     ], localIndices)
   ),
 };
