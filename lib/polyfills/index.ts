@@ -18,6 +18,12 @@ import {
 } from './simdBitwise';
 
 import {
+  f64x2Eq, f64x2Ne,
+  f64x2Lt, f64x2Le,
+  f64x2Gt, f64x2Ge,
+  f32x4Eq, f32x4Ne,
+  f32x4Lt, f32x4Le,
+  f32x4Gt, f32x4Ge,
   i32x4Eq, i32x4GeS, i32x4GeU, i32x4GtS,
   i32x4GtU, i32x4LeS, i32x4LeU, i32x4LtS,
   i32x4LtU, i32x4Ne,
@@ -47,6 +53,7 @@ import {
 
 import {
   i16x8Splat, i32x4Splat, i64x2Splat, i8x16Splat,
+  f32x4Splat, f64x2Splat,
 } from './simdSplat';
 
 import { v128Store } from './simdStore';
@@ -102,6 +109,13 @@ export const polyfills = [
   i16x8Shl, i16x8ShrU, i16x8ShrS,
   i8x16Shl, i8x16ShrU, i8x16ShrS,
   i64x2Splat, i32x4Splat, i16x8Splat, i8x16Splat,
+  f32x4Splat, f64x2Splat,
+  f64x2Eq, f64x2Ne,
+  f64x2Lt, f64x2Le,
+  f64x2Gt, f64x2Ge,
+  f32x4Eq, f32x4Ne,
+  f32x4Lt, f32x4Le,
+  f32x4Gt, f32x4Ge,
   i32x4Eq, i32x4Ne,
   i32x4LtS, i32x4LtU, i32x4LeS, i32x4LeU,
   i32x4GtU, i32x4GtS, i32x4GeU, i32x4GeS,

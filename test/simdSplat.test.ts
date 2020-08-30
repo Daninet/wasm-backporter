@@ -3,7 +3,7 @@ import { compileTest } from './util';
 
 test('.splat', async () => {
   await compileTest(
-    ['fd12', 'fd11', 'fd10', 'fd0f'],
+    ['fd12', 'fd11', 'fd10', 'fd0f', 'fd13', 'fd14'],
     `(module
       (memory 1)
       (func $i64x2splat (param $src i32) (param $dst i32)
@@ -34,16 +34,35 @@ test('.splat', async () => {
         i8x16.splat
         v128.store)
 
+      (func $f32x4splat (param $src i32) (param $dst i32)
+        get_local $dst
+        get_local $src
+        f32.load
+        f32x4.splat
+        v128.store)
+
+      (func $f64x2splat (param $src i32) (param $dst i32)
+        get_local $dst
+        get_local $src
+        f64.load
+        f64x2.splat
+        v128.store)
+
       (export "i64x2splat" (func $i64x2splat))
       (export "i32x4splat" (func $i32x4splat))
       (export "i16x8splat" (func $i16x8splat))
       (export "i8x16splat" (func $i8x16splat))
+      (export "f32x4splat" (func $f32x4splat))
+      (export "f64x2splat" (func $f64x2splat))
       (export "memory" (memory 0)))`,
     async (exports1, exports2) => {
       const memory1 = Buffer.from(exports1.memory.buffer);
       const memory2 = Buffer.from(exports2.memory.buffer);
 
-      const fn = ['i64x2splat', 'i32x4splat', 'i16x8splat', 'i8x16splat'];
+      const fn = [
+        'i64x2splat', 'i32x4splat', 'i16x8splat', 'i8x16splat',
+        'f32x4splat', 'f64x2splat',
+      ];
 
       for (let z = 0; z < fn.length; z++) {
         for (let i = 0; i < 16; i++) {

@@ -17,11 +17,41 @@ export const i64x2Splat: IPolyfill = {
   ),
 };
 
+export const f64x2Splat: IPolyfill = {
+  locals: ['i64'],
+  match: (instruction) => instruction.name === 'f64x2.splat',
+  replacer: (instruction, fnIndex, localIndices) => (
+    new Uint8Array([
+      op['i64.reinterpret_f64'],
+      op['local.tee'], ...localIndices[0],
+      op['local.get'], ...localIndices[0],
+    ])
+  ),
+};
+
 export const i32x4Splat: IPolyfill = {
   locals: ['i64'],
   match: (instruction) => instruction.name === 'i32x4.splat',
   replacer: (instruction, fnIndex, localIndices) => (
     new Uint8Array([
+      op['i64.extend_i32_u'],
+      op['local.tee'], ...localIndices[0],
+      op['i64.const'], 0x20,
+      op['i64.shl'],
+      op['local.get'], ...localIndices[0],
+      op['i64.or'],
+      op['local.tee'], ...localIndices[0],
+      op['local.get'], ...localIndices[0],
+    ])
+  ),
+};
+
+export const f32x4Splat: IPolyfill = {
+  locals: ['i64'],
+  match: (instruction) => instruction.name === 'f32x4.splat',
+  replacer: (instruction, fnIndex, localIndices) => (
+    new Uint8Array([
+      op['i32.reinterpret_f32'],
       op['i64.extend_i32_u'],
       op['local.tee'], ...localIndices[0],
       op['i64.const'], 0x20,
