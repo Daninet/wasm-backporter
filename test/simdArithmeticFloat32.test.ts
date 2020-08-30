@@ -1,9 +1,9 @@
 import { compileTest } from './util';
 /* global test, expect */
 
-test('f64x2 add + sub + mul + div + min + max', async () => {
+test('f32x4 add + sub + mul + div + min + max', async () => {
   await compileTest(
-    ['fdf0', 'fdf1', 'fdf2', 'fdf3', 'fdf4', 'fdf5'],
+    ['fde4', 'fde5', 'fde6', 'fde7', 'fde8', 'fde9'],
     `(module
       (memory 1)
       (func $add (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -12,7 +12,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.add
+        f32x4.add
         v128.store)
 
       (func $sub (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -21,7 +21,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.sub
+        f32x4.sub
         v128.store)
 
       (func $mul (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -30,7 +30,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.mul
+        f32x4.mul
         v128.store)
 
       (func $div (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -39,7 +39,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.div
+        f32x4.div
         v128.store)
 
       (func $min (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -48,7 +48,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.min
+        f32x4.min
         v128.store)
 
       (func $max (param $srca i32) (param $srcb i32) (param $dst i32)
@@ -57,7 +57,7 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
         v128.load
         get_local $srcb
         v128.load
-        f64x2.max
+        f32x4.max
         v128.store)
 
       (export "add" (func $add))
@@ -109,30 +109,30 @@ test('f64x2 add + sub + mul + div + min + max', async () => {
   );
 });
 
-test('f64x2 abs + sqrt + neg', async () => {
+test('f32x4 abs + sqrt + neg', async () => {
   await compileTest(
-    ['fdec', 'fded', 'fdef'],
+    ['fde0', 'fde1', 'fde3'],
     `(module
       (memory 1)
       (func $abs (param $src i32) (param $dst i32)
         get_local $dst
         get_local $src
         v128.load
-        f64x2.abs
+        f32x4.abs
         v128.store)
 
       (func $sqrt (param $src i32) (param $dst i32)
         get_local $dst
         get_local $src
         v128.load
-        f64x2.sqrt
+        f32x4.sqrt
         v128.store)
 
       (func $neg (param $src i32) (param $dst i32)
         get_local $dst
         get_local $src
         v128.load
-        f64x2.neg
+        f32x4.neg
         v128.store)
 
       (export "abs" (func $abs))

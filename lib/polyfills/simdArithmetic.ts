@@ -125,20 +125,24 @@ export const f64x2Max: IPolyfill = {
   ),
 };
 
+function f64x2OpSingle(instruction: number, localIndices: Uint8Array[]): Uint8Array {
+  return new Uint8Array([
+    op['local.set'], ...localIndices[0],
+    op['f64.reinterpret_i64'],
+    instruction,
+    op['i64.reinterpret_f64'],
+    op['local.get'], ...localIndices[0],
+    op['f64.reinterpret_i64'],
+    instruction,
+    op['i64.reinterpret_f64'],
+  ]);
+}
+
 export const f64x2Neg: IPolyfill = {
   locals: ['i64'],
   match: (instruction) => instruction.name === 'f64x2.neg',
   replacer: (instruction, fnIndex, localIndices) => (
-    new Uint8Array([
-      op['local.set'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.neg'],
-      op['i64.reinterpret_f64'],
-      op['local.get'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.neg'],
-      op['i64.reinterpret_f64'],
-    ])
+    f64x2OpSingle(op['f64.neg'], localIndices)
   ),
 };
 
@@ -146,16 +150,7 @@ export const f64x2Sqrt: IPolyfill = {
   locals: ['i64'],
   match: (instruction) => instruction.name === 'f64x2.sqrt',
   replacer: (instruction, fnIndex, localIndices) => (
-    new Uint8Array([
-      op['local.set'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.sqrt'],
-      op['i64.reinterpret_f64'],
-      op['local.get'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.sqrt'],
-      op['i64.reinterpret_f64'],
-    ])
+    f64x2OpSingle(op['f64.sqrt'], localIndices)
   ),
 };
 
@@ -163,16 +158,7 @@ export const f64x2Abs: IPolyfill = {
   locals: ['i64'],
   match: (instruction) => instruction.name === 'f64x2.abs',
   replacer: (instruction, fnIndex, localIndices) => (
-    new Uint8Array([
-      op['local.set'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.abs'],
-      op['i64.reinterpret_f64'],
-      op['local.get'], ...localIndices[0],
-      op['f64.reinterpret_i64'],
-      op['f64.abs'],
-      op['i64.reinterpret_f64'],
-    ])
+    f64x2OpSingle(op['f64.abs'], localIndices)
   ),
 };
 
@@ -269,6 +255,158 @@ export const i32x4Abs: IPolyfill = {
         op['i32.sub'],
       ], localIndices),
     ])
+  ),
+};
+
+function f32x4Op(instruction: number, localIndices: Uint8Array[]): Uint8Array {
+  const buf = [];
+
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      buf.push(new Uint8Array([
+        op['local.get'], ...localIndices[i],
+        ...(j === 1 ? [
+          op['i64.const'], 0x20,
+          op['i64.shr_u'],
+        ] : []),
+        op['i32.wrap_i64'],
+        op['f32.reinterpret_i32'],
+        op['local.get'], ...localIndices[i + 2],
+        ...(j === 1 ? [
+          op['i64.const'], 0x20,
+          op['i64.shr_u'],
+        ] : []),
+        op['i32.wrap_i64'],
+        op['f32.reinterpret_i32'],
+        instruction,
+        op['i32.reinterpret_f32'],
+        op['i64.extend_i32_u'],
+      ]));
+    }
+  }
+
+  return new Uint8Array([
+    op['local.set'], ...localIndices[3],
+    op['local.set'], ...localIndices[2],
+    op['local.set'], ...localIndices[1],
+    op['local.set'], ...localIndices[0],
+
+    ...buf[0], ...buf[1],
+    op['i64.const'], 0x20,
+    op['i64.shl'],
+    op['i64.or'],
+
+    ...buf[2], ...buf[3],
+    op['i64.const'], 0x20,
+    op['i64.shl'],
+    op['i64.or'],
+  ]);
+}
+
+export const f32x4Add: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.add',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.add'], localIndices)
+  ),
+};
+
+export const f32x4Sub: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.sub',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.sub'], localIndices)
+  ),
+};
+
+export const f32x4Mul: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.mul',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.mul'], localIndices)
+  ),
+};
+
+export const f32x4Div: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.div',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.div'], localIndices)
+  ),
+};
+
+export const f32x4Min: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.min',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.min'], localIndices)
+  ),
+};
+
+export const f32x4Max: IPolyfill = {
+  locals: ['i64', 'i64', 'i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.max',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4Op(op['f32.max'], localIndices)
+  ),
+};
+
+function f32x4OpSingle(instruction: number, localIndices: Uint8Array[]): Uint8Array {
+  const buf = [];
+
+  for (let i = 0; i < 2; i++) {
+    buf.push(new Uint8Array([
+      op['local.get'], ...localIndices[i],
+      op['i32.wrap_i64'],
+      op['f32.reinterpret_i32'],
+      instruction,
+      op['i32.reinterpret_f32'],
+      op['i64.extend_i32_u'],
+
+      op['local.get'], ...localIndices[i],
+      op['i64.const'], 0x20,
+      op['i64.shr_u'],
+      op['i32.wrap_i64'],
+      op['f32.reinterpret_i32'],
+      instruction,
+      op['i32.reinterpret_f32'],
+      op['i64.extend_i32_u'],
+
+      op['i64.const'], 0x20,
+      op['i64.shl'],
+      op['i64.or'],
+    ]));
+  }
+
+  return new Uint8Array([
+    op['local.set'], ...localIndices[1],
+    op['local.set'], ...localIndices[0],
+
+    ...buf[0], ...buf[1],
+  ]);
+}
+
+export const f32x4Neg: IPolyfill = {
+  locals: ['i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.neg',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4OpSingle(op['f32.neg'], localIndices)
+  ),
+};
+
+export const f32x4Sqrt: IPolyfill = {
+  locals: ['i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.sqrt',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4OpSingle(op['f32.sqrt'], localIndices)
+  ),
+};
+
+export const f32x4Abs: IPolyfill = {
+  locals: ['i64', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.abs',
+  replacer: (instruction, fnIndex, localIndices) => (
+    f32x4OpSingle(op['f32.abs'], localIndices)
   ),
 };
 
