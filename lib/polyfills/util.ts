@@ -7,6 +7,9 @@ export const S32_MAX = new Uint8Array([0xFF, 0xFF, 0xFF, 0xFF, 0x07]);
 export const U64_MAX = U32_MAX;
 export const MINUS_ONE = U64_MAX;
 
+export const F32_MINUS_ONE = new Uint8Array([0x00, 0x00, 0x80, 0xBF]);
+export const F64_MINUS_ONE = new Uint8Array([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xBF]);
+
 // ----- EXCLUDE 32 bit values -----
 // 0000 0000 FFFF FFFF
 export const EXCLUDE32_0 = new Uint8Array([0x80, 0x80, 0x80, 0x80, 0x70]);

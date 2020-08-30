@@ -12,7 +12,7 @@
     "prepublishOnly": "",
     "tsc": "npx tsc --noEmit",
     "test": "node --expose-gc --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest --coverage --logHeapUsage",
-    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdCompareFloat"
+    "testSimd": "node --experimental-wasm-simd --wasm-simd-post-mvp ./node_modules/jest/bin/jest simdArithmeticFloat64"
   },
   "repository": {
     "type": "git",

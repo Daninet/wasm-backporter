@@ -1,4 +1,7 @@
 import {
+  f64x2Add, f64x2Sub, f64x2Mul,
+  f64x2Div, f64x2Sqrt, f64x2Neg, f64x2Abs,
+  f64x2Min, f64x2Max,
   i64x2Add, i64x2Mul, i64x2Neg, i64x2Sub,
   i32x4Add, i32x4Mul, i32x4Sub, i32x4Neg, i32x4Abs,
   i16x8Add, i16x8AddSaturateU, i16x8AddSaturateS,
@@ -90,6 +93,9 @@ export const polyfills = [
   i64x2ReplaceLane, i32x4ReplaceLane,
   i16x8ReplaceLane, i8x16ReplaceLane,
   v128Load, v128Store, v128Const,
+  f64x2Add, f64x2Sub, f64x2Mul,
+  f64x2Div, f64x2Sqrt, f64x2Neg, f64x2Abs,
+  f64x2Min, f64x2Max,
   i64x2Add, i64x2Sub, i64x2Mul, i64x2Neg,
   i32x4Add, i32x4Sub, i32x4Mul, i32x4Neg, i32x4Abs,
   i16x8Add, i16x8AddSaturateU, i16x8AddSaturateS,
