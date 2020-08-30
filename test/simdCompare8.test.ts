@@ -124,13 +124,8 @@ test('i8x16 comparision', async () => {
           memory2[i + 16] = 0xFF;
         }
 
-        console.log(memory1);
-        console.log(memory2);
-        console.log(fn[z]);
         exports1[fn[z]](0, 0, 33);
         exports2[fn[z]](0, 0, 33);
-        console.log(memory1);
-        console.log(memory2);
         expect(memory2).toStrictEqual(memory1);
 
         exports1[fn[z]](16, 16, 32);

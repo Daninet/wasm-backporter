@@ -1,7 +1,7 @@
 import { compileTest } from './util';
 /* global test, expect */
 
-test('.splat', async () => {
+test('splat', async () => {
   await compileTest(
     ['fd07', 'fd08', 'fd09', 'fd0a'],
     `(module
