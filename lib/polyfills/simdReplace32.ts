@@ -38,3 +38,14 @@ export const i32x4ReplaceLane: IPolyfill = {
     ]);
   },
 };
+
+export const f32x4ReplaceLane: IPolyfill = {
+  locals: ['i32', 'i64'],
+  match: (instruction) => instruction.name === 'f32x4.replace_lane',
+  replacer: (instruction, fnIndex, localIndices) => (
+    new Uint8Array([
+      op['i32.reinterpret_f32'],
+      ...i32x4ReplaceLane.replacer(instruction, fnIndex, localIndices),
+    ])
+  ),
+};

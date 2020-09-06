@@ -73,10 +73,12 @@ import {
 
 import {
   i64x2ExtractLane,
+  f64x2ExtractLane,
 } from './simdExtract64';
 
 import {
   i32x4ExtractLane,
+  f32x4ExtractLane,
 } from './simdExtract32';
 
 import {
@@ -136,10 +138,12 @@ import {
 
 import {
   i64x2ReplaceLane,
+  f64x2ReplaceLane,
 } from './simdReplace64';
 
 import {
   i32x4ReplaceLane,
+  f32x4ReplaceLane,
 } from './simdReplace32';
 
 import {
@@ -166,13 +170,20 @@ import {
   i16x8WidenLowi8x16U, i16x8WidenLowi8x16S,
 } from './simdWiden16';
 
+import {
+  f32x4Converti32x4S, f32x4Converti32x4U,
+} from './simdConvert';
+
 export const polyfills = [
   memoryFill, dataDrop, elemDrop, memoryCopy,
-  i64x2ExtractLane, i32x4ExtractLane,
+  i64x2ExtractLane, f64x2ExtractLane,
+  i32x4ExtractLane, f32x4ExtractLane,
   i16x8ExtractLaneU, i16x8ExtractLaneS,
   i8x16ExtractLaneU, i8x16ExtractLaneS,
-  i64x2ReplaceLane, i32x4ReplaceLane,
+  i64x2ReplaceLane, f64x2ReplaceLane,
+  i32x4ReplaceLane, f32x4ReplaceLane,
   i16x8ReplaceLane, i8x16ReplaceLane,
+  f32x4Converti32x4U, f32x4Converti32x4S,
   v128Load, v128Store, v128Const,
   f64x2Add, f64x2Sub, f64x2Mul,
   f64x2Div, f64x2Sqrt, f64x2Neg, f64x2Abs,

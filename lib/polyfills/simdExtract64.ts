@@ -22,3 +22,14 @@ export const i64x2ExtractLane: IPolyfill = {
     ]);
   },
 };
+
+export const f64x2ExtractLane: IPolyfill = {
+  locals: ['i64'],
+  match: (instruction) => instruction.name === 'f64x2.extract_lane',
+  replacer: (instruction, fnIndex, localIndices) => (
+    new Uint8Array([
+      ...i64x2ExtractLane.replacer(instruction, fnIndex, localIndices),
+      op['f64.reinterpret_i64'],
+    ])
+  ),
+};

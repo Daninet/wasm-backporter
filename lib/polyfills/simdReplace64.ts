@@ -26,3 +26,14 @@ export const i64x2ReplaceLane: IPolyfill = {
     ]);
   },
 };
+
+export const f64x2ReplaceLane: IPolyfill = {
+  locals: ['i64', 'i64'],
+  match: (instruction) => instruction.name === 'f64x2.replace_lane',
+  replacer: (instruction, fnIndex, localIndices) => (
+    new Uint8Array([
+      op['i64.reinterpret_f64'],
+      ...i64x2ReplaceLane.replacer(instruction, fnIndex, localIndices),
+    ])
+  ),
+};
